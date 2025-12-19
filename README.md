@@ -7,6 +7,9 @@ Plugin untuk menganalisis kinerja perpustakaan berdasarkan **Pedoman Analisis Ki
 
 Panduan lengkap untuk memasang plugin ini dapat ditemukan pada tautan berikut: ➡️ [Panduan Pemasangan Plugin SLiMS](https://github.com/adeism/belajarslims/blob/main/belajar-pasang-plugin.md)
 
+<img width="901" height="1778" alt="msedge_C39qFI8ZlC" src="https://github.com/user-attachments/assets/623959da-4624-48f4-a171-a407c349211c" />
+
+
 ## � Filter dan Opsi
 
 Plugin ini menyediakan beberapa filter untuk menganalisis data sesuai kebutuhan:
