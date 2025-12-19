@@ -867,7 +867,11 @@ if ($result_b211->num_rows > 0) {
         echo '<h4>📊 Perputaran Koleksi - Perbandingan</h4>';
         echo '<div class="bar-chart">';
         foreach ($data_b211 as $item) {
-            $percentage = ($item['Total'] / $max_total) * 100;
+            if ($max_total > 0) {
+                $percentage = ($item['Total'] / $max_total) * 100;
+            } else {
+                $percentage = 0;
+            }
             echo '<div class="bar-item">';
             echo '<div class="bar-label">' . htmlspecialchars($item['Indikator']) . '</div>';
             echo '<div class="bar-container">';
@@ -1128,8 +1132,13 @@ if ($result_b212->num_rows > 0) {
         // Progress bar comparison
         $max_val = max($data_b212[0]['TotalPinjaman'], $data_b212[0]['TotalPopulasi']);
         echo '<div class="bar-chart" style="margin-top: 20px;">';
-        $pinjaman_pct = ($data_b212[0]['TotalPinjaman'] / $max_val) * 100;
-        $populasi_pct = ($data_b212[0]['TotalPopulasi'] / $max_val) * 100;
+        if ($max_val == 0) {
+            $pinjaman_pct = 0;
+            $populasi_pct = 0;
+        } else {
+            $pinjaman_pct = ($data_b212[0]['TotalPinjaman'] / $max_val) * 100;
+            $populasi_pct = ($data_b212[0]['TotalPopulasi'] / $max_val) * 100;
+        }
         echo '<div class="bar-item">';
         echo '<div class="bar-label">Pinjaman</div>';
         echo '<div class="bar-container">';
@@ -1395,8 +1404,13 @@ if ($result_b221->num_rows > 0) {
     
     // Bar comparison
     $max_b221 = max($data_b221['TotalKunjungan'], $data_b221['TotalPopulasi']);
-    $kunjungan_pct = ($data_b221['TotalKunjungan'] / $max_b221) * 100;
-    $populasi_pct_b221 = ($data_b221['TotalPopulasi'] / $max_b221) * 100;
+    if ($max_b221 == 0) {
+        $kunjungan_pct = 0;
+        $populasi_pct_b221 = 0;
+    } else {
+        $kunjungan_pct = ($data_b221['TotalKunjungan'] / $max_b221) * 100;
+        $populasi_pct_b221 = ($data_b221['TotalPopulasi'] / $max_b221) * 100;
+    }
     echo '<div class="bar-chart" style="margin-top: 20px;">';
     echo '<div class="bar-item">';
     echo '<div class="bar-label">Kunjungan</div>';
