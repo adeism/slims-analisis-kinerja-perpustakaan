@@ -33,6 +33,8 @@ $include_renewal     = isset($_GET['include_renewal']) && $_GET['include_renewal
 $only_active_members = isset($_GET['only_active_members']) && $_GET['only_active_members'] == '1';
 $table_only          = isset($_GET['table_only']) && $_GET['table_only'] == '1';
 
+$settings = pakpiLoadSettings();
+
 // Handle Save Settings Action
 $msg_success = '';
 $msg_error   = '';
@@ -79,6 +81,7 @@ if (isset($_POST['save_settings'])) {
 
         if (pakpiSaveSettings($newSettings)) {
             $msg_success = 'Pengaturan kop laporan dan penandatangan berhasil disimpan!';
+            $settings = $newSettings;
         } else {
             $msg_error = 'Gagal menyimpan pengaturan ke settings.json!';
         }
@@ -91,7 +94,132 @@ if (isset($_GET['action']) && $_GET['action'] === 'print_view') {
     exit;
 }
 
-// Handle CSV Export
+// Calculate Indicator Data
+$dataB211 = pakpiGetB211($dbs, $tahun, $include_renewal);
+$dataB212 = pakpiGetB212($dbs, $tahun, $include_renewal, $only_active_members);
+$dataB213 = pakpiGetB213($dbs, $tahun);
+$dataB221 = pakpiGetB221($dbs, $tahun, $only_active_members);
+$insights = pakpiGenerateInsights($dataB211, $dataB212, $dataB213, $dataB221);
+
+// ── Handle EXCEL Export (.xls) ──────────────────────────────────────────────
+if (isset($_GET['action']) && $_GET['action'] === 'export_excel') {
+    $meta = [
+        'Instansi'       => $settings['instansi'] ?? 'Perpustakaan',
+        'Unit'           => $settings['unit'] ?? 'UPT Perpustakaan',
+        'Tahun Acuan'    => $tahun,
+        'Tanggal Ekspor' => date('d F Y H:i:s'),
+        'Standar Acuan'  => 'SNI ISO 2789:2013 & ISO 11620:2014'
+    ];
+
+    if ($tab === 'multiyear') {
+        $trendData = pakpiGetMultiYearTrend($dbs, $tahun, 5);
+        $rows = [];
+        foreach ($trendData as $y => $td) {
+            $rows[] = [
+                $y,
+                $td['perputaran_eks'],
+                $td['perputaran_judul'],
+                $td['pinjaman_kapita'],
+                $td['total_pinjaman'],
+                $td['pct_koleksi_tdk'] . '%',
+                $td['pct_pemanfaatan'] . '%',
+                $td['kunjungan_kapita'],
+                $td['total_kunjungan'],
+                $td['populasi']
+            ];
+        }
+        $tables = [[
+            'title'   => 'Tabel Matriks Kinerja Multi-Tahun (' . ($tahun - 4) . ' - ' . $tahun . ')',
+            'headers' => ['Tahun', 'Perputaran (thd Eks)', 'Perputaran (thd Judul)', 'Pinjaman per Kapita', 'Total Pinjaman', 'Koleksi Belum Dipinjam (%)', 'Pemanfaatan Koleksi (%)', 'Kunjungan per Kapita', 'Total Kunjungan', 'Populasi Anggota'],
+            'rows'    => $rows
+        ]];
+        pakpiExportExcel('Tren_Kinerja_MultiTahun_' . ($tahun - 4) . '-' . $tahun . '.xls', 'LAPORAN TREN KINERJA MULTI-TAHUN PERPUSTAKAAN', $tables, $meta, $settings['signers'] ?? []);
+    } elseif ($tab === 'monthly') {
+        $monthly = pakpiGetMonthlyTrend($dbs, $tahun);
+        $rows = [];
+        foreach ($monthly as $m) {
+            $rows[] = [$m['month_code'], $m['month_name'], $m['loans'], $m['visits']];
+        }
+        $tables = [[
+            'title'   => 'Distribusi Aktivitas Bulanan (Tahun ' . $tahun . ')',
+            'headers' => ['Kode Bulan', 'Nama Bulan', 'Total Peminjaman Buku', 'Total Kunjungan Pemustaka'],
+            'rows'    => $rows
+        ]];
+        pakpiExportExcel('Distribusi_Bulanan_' . $tahun . '.xls', 'LAPORAN DISTRIBUSI AKTIVITAS BULANAN PERPUSTAKAAN', $tables, $meta, $settings['signers'] ?? []);
+    } elseif ($tab === 'insights') {
+        $rows = [];
+        $no = 1;
+        foreach ($insights as $ins) {
+            $rows[] = [$no++, $ins['title'], $ins['message']];
+        }
+        $tables = [[
+            'title'   => 'Evaluasi Mutu & Rekomendasi Manajerial (Tahun ' . $tahun . ')',
+            'headers' => ['No', 'Poin Evaluasi Kinerja', 'Rekomendasi Kebijakan'],
+            'rows'    => $rows
+        ]];
+        pakpiExportExcel('Evaluasi_Mutu_PAKPI_' . $tahun . '.xls', 'LAPORAN EVALUASI & REKOMENDASI MUTU KINERJA', $tables, $meta, $settings['signers'] ?? []);
+    } else {
+        // Tab summary - Complete 4 Indicators Excel
+        $tables = [];
+
+        // 1. Executive Summary Table
+        $tables[] = [
+            'title'   => 'RINGKASAN EKSEKUTIF - 4 INDIKATOR KINERJA UTAMA',
+            'headers' => ['Kode Indikator', 'Nama Indikator ISO', 'Nilai Capaian', 'Satuan'],
+            'rows'    => [
+                ['B.2.1.1', 'Perputaran Koleksi (Collection Turnover Rate)', $dataB211[0]['nilai_thd_eksemplar'] ?? 0, 'kali per eksemplar/tahun'],
+                ['B.2.1.2', 'Pinjaman Per Kapita (Loans per Capita)', $dataB212[0]['nilai'] ?? 0, 'buku per anggota/tahun'],
+                ['B.2.1.3', 'Pemanfaatan Koleksi (Collection Utilization)', $dataB213['pct_digunakan'] . '%', 'koleksi telah dimanfaatkan'],
+                ['B.2.2.1', 'Kunjungan Perpustakaan Per Kapita (Library Visits)', $dataB221['nilai'], 'kali kunjungan per anggota/tahun'],
+            ]
+        ];
+
+        // 2. B.2.1.1 Table
+        $rowsB211 = [];
+        foreach ($dataB211 as $r) {
+            $rowsB211[] = [$r['indikator'], $r['total'], $r['total_eksemplar'], $r['nilai_thd_eksemplar'], $r['total_judul'], $r['nilai_thd_judul']];
+        }
+        $tables[] = [
+            'title'   => '1. B.2.1.1 - Perputaran Koleksi (Collection Turnover Rate)',
+            'headers' => ['Indikator / Transaksi', 'Total Transaksi', 'Total Eksemplar', 'Nilai thd Eksemplar', 'Total Judul', 'Nilai thd Judul'],
+            'rows'    => $rowsB211
+        ];
+
+        // 3. B.2.1.2 Table
+        $rowsB212 = [];
+        foreach ($dataB212 as $r) {
+            $rowsB212[] = [$r['indikator'], $r['total_pinjaman'], $r['total_populasi'], $r['nilai'], 'Rata-rata ' . $r['nilai'] . ' buku dipinjam per anggota'];
+        }
+        $tables[] = [
+            'title'   => '2. B.2.1.2 - Pinjaman Per Kapita (Loans per Capita)',
+            'headers' => ['Indikator Transaksi', 'Total Peminjaman', 'Total Populasi Anggota', 'Nilai Capaian', 'Keterangan'],
+            'rows'    => $rowsB212
+        ];
+
+        // 4. B.2.1.3 Table
+        $tables[] = [
+            'title'   => '3. B.2.1.3 - Persentase Koleksi Tidak Digunakan (Dormant Collection)',
+            'headers' => ['Status Koleksi Bahan Pustaka', 'Jumlah Eksemplar', 'Total Seluruh Eksemplar', 'Persentase (%)'],
+            'rows'    => [
+                ['Belum Pernah Dipinjam Tahun Ini', $dataB213['total_tidak'], $dataB213['total_eksemplar'], $dataB213['persentase_tidak'] . '%'],
+                ['Telah Dimanfaatkan (Peminjaman Aktif)', $dataB213['total_digunakan'], $dataB213['total_eksemplar'], $dataB213['pct_digunakan'] . '%']
+            ]
+        ];
+
+        // 5. B.2.2.1 Table
+        $tables[] = [
+            'title'   => '4. B.2.2.1 - Kunjungan Perpustakaan Per Kapita (Library Visits per Capita)',
+            'headers' => ['Indikator', 'Total Kehadiran Kunjungan', 'Total Populasi Anggota', 'Nilai Capaian', 'Keterangan'],
+            'rows'    => [
+                ['Kunjungan Fisik Pemustaka', $dataB221['total_kunjungan'], $dataB221['total_populasi'], $dataB221['nilai'], 'Rata-rata setiap anggota berkunjung ' . $dataB221['nilai'] . ' kali/tahun']
+            ]
+        ];
+
+        pakpiExportExcel('Analisis_Kinerja_Perpustakaan_' . $tahun . '.xls', 'LAPORAN ANALISIS KINERJA PERPUSTAKAAN (PAKPI)', $tables, $meta, $settings['signers'] ?? []);
+    }
+}
+
+// ── Handle CSV Export ───────────────────────────────────────────────────────
 if (isset($_GET['action']) && $_GET['action'] === 'export_csv') {
     if ($tab === 'multiyear') {
         $trendData = pakpiGetMultiYearTrend($dbs, $tahun, 5);
@@ -120,12 +248,15 @@ if (isset($_GET['action']) && $_GET['action'] === 'export_csv') {
             $rows[] = [$m['month_code'], $m['month_name'], $m['loans'], $m['visits']];
         }
         pakpiExportCsv('Distribusi_Bulanan_' . $tahun . '.csv', $headers, $rows);
+    } elseif ($tab === 'insights') {
+        $headers = ['No', 'Poin Evaluasi', 'Rekomendasi Kebijakan'];
+        $rows = [];
+        $no = 1;
+        foreach ($insights as $ins) {
+            $rows[] = [$no++, $ins['title'], $ins['message']];
+        }
+        pakpiExportCsv('Evaluasi_Mutu_PAKPI_' . $tahun . '.csv', $headers, $rows);
     } else {
-        $dataB211 = pakpiGetB211($dbs, $tahun, $include_renewal);
-        $dataB212 = pakpiGetB212($dbs, $tahun, $include_renewal, $only_active_members);
-        $dataB213 = pakpiGetB213($dbs, $tahun);
-        $dataB221 = pakpiGetB221($dbs, $tahun, $only_active_members);
-
         $headers = ['Kode Indikator', 'Nama Indikator', 'Rincian / Sub Indikator', 'Total Transaksi', 'Total Populasi/Eksemplar', 'Nilai Capaian', 'Satuan'];
         $rows = [];
 
@@ -146,14 +277,6 @@ if (isset($_GET['action']) && $_GET['action'] === 'export_csv') {
         pakpiExportCsv('Analisis_Kinerja_Perpustakaan_' . $tahun . '.csv', $headers, $rows);
     }
 }
-
-// Calculate Indicator Data
-$settings = pakpiLoadSettings();
-$dataB211 = pakpiGetB211($dbs, $tahun, $include_renewal);
-$dataB212 = pakpiGetB212($dbs, $tahun, $include_renewal, $only_active_members);
-$dataB213 = pakpiGetB213($dbs, $tahun);
-$dataB221 = pakpiGetB221($dbs, $tahun, $only_active_members);
-$insights = pakpiGenerateInsights($dataB211, $dataB212, $dataB213, $dataB221);
 ?>
 
 <style>
@@ -415,14 +538,14 @@ $insights = pakpiGenerateInsights($dataB211, $dataB212, $dataB213, $dataB221);
         <!-- Filter Bar -->
         <div class="pakpi-card pakpi-filter-box non-printable">
             <div class="pakpi-card-body p-3">
-                <form method="get" action="<?= pakpiAdminUrl() ?>" class="inline-form submitViaAJAX d-flex align-items-center flex-wrap" style="gap: 15px;">
+                <form method="get" action="<?= pakpiAdminUrl() ?>" class="inline-form submitViaAJAX d-flex align-items-center flex-wrap" style="gap: 12px;">
                     <input type="hidden" name="mod" value="<?= htmlspecialchars($_GET['mod'] ?? 'reporting', ENT_QUOTES, 'UTF-8') ?>" />
                     <input type="hidden" name="id" value="<?= htmlspecialchars($_GET['id'] ?? '', ENT_QUOTES, 'UTF-8') ?>" />
                     <input type="hidden" name="tab" value="<?= htmlspecialchars($tab, ENT_QUOTES, 'UTF-8') ?>" />
 
                     <div class="d-flex align-items-center">
                         <label class="font-weight-bold mb-0 mr-2 text-dark">📅 <?= __('Tahun Acuan') ?>:</label>
-                        <select name="tahun" class="form-control form-select form-control-sm" style="width: 110px;">
+                        <select name="tahun" class="form-control form-select form-control-sm" style="width: 105px;">
                             <?php for ($y = $current_year; $y >= 2015; $y--): ?>
                                 <option value="<?= $y ?>" <?= $y === $tahun ? 'selected' : '' ?>><?= $y ?></option>
                             <?php endfor; ?>
@@ -456,11 +579,18 @@ $insights = pakpiGenerateInsights($dataB211, $dataB212, $dataB213, $dataB221);
                         🔍 <?= __('Tampilkan') ?>
                     </button>
 
-                    <a href="<?= pakpiAdminUrl(['action' => 'export_csv', 'tab' => $tab, 'tahun' => $tahun, 'include_renewal' => $include_renewal ? 1 : 0, 'only_active_members' => $only_active_members ? 1 : 0]) ?>" class="btn btn-success btn-sm px-3 py-1 font-weight-bold notAJAX" target="_blank">
-                        📊 <?= __('Ekspor ke CSV') ?>
+                    <!-- Export Excel (.xls) -->
+                    <a href="<?= pakpiAdminUrl(['action' => 'export_excel', 'tab' => $tab, 'tahun' => $tahun, 'include_renewal' => $include_renewal ? 1 : 0, 'only_active_members' => $only_active_members ? 1 : 0]) ?>" class="btn btn-success btn-sm px-3 py-1 font-weight-bold notAJAX" target="_blank" title="Unduh Spreadsheet Format Microsoft Excel">
+                        📗 <?= __('Ekspor ke Excel') ?>
                     </a>
 
-                    <a href="<?= pakpiAdminUrl(['action' => 'print_view', 'tahun' => $tahun, 'include_renewal' => $include_renewal ? 1 : 0, 'only_active_members' => $only_active_members ? 1 : 0]) ?>" target="_blank" class="btn btn-secondary btn-sm px-3 py-1 font-weight-bold notAJAX">
+                    <!-- Export CSV -->
+                    <a href="<?= pakpiAdminUrl(['action' => 'export_csv', 'tab' => $tab, 'tahun' => $tahun, 'include_renewal' => $include_renewal ? 1 : 0, 'only_active_members' => $only_active_members ? 1 : 0]) ?>" class="btn btn-outline-success btn-sm px-3 py-1 font-weight-bold notAJAX" target="_blank" title="Unduh Format CSV">
+                        📊 <?= __('Ekspor CSV') ?>
+                    </a>
+
+                    <!-- Print & PDF View -->
+                    <a href="<?= pakpiAdminUrl(['action' => 'print_view', 'tahun' => $tahun, 'include_renewal' => $include_renewal ? 1 : 0, 'only_active_members' => $only_active_members ? 1 : 0]) ?>" target="_blank" class="btn btn-secondary btn-sm px-3 py-1 font-weight-bold notAJAX" title="Cetak Borang Resmi / Simpan sebagai PDF">
                         🖨️ <?= __('Cetak / Simpan ke PDF') ?>
                     </a>
                 </form>

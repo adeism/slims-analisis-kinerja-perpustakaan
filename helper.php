@@ -93,6 +93,92 @@ function pakpiExportCsv(string $filename, array $headers, array $rows): void {
     exit;
 }
 
+// ── Excel Exporter (.xls format with styling and multi-section tables) ───────
+function pakpiExportExcel(string $filename, string $reportTitle, array $tables, array $meta = [], array $signers = []): void {
+    if (ob_get_level()) {
+        ob_end_clean();
+    }
+    header('Content-Type: application/vnd.ms-excel; charset=UTF-8');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('Cache-Control: max-age=0, no-cache, no-store, must-revalidate');
+    header('Pragma: no-cache');
+    header('Expires: 0');
+
+    echo '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
+    echo '<head><meta charset="UTF-8">';
+    echo '<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Laporan Kinerja</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->';
+    echo '<style>';
+    echo 'table { border-collapse: collapse; font-family: Calibri, Arial, sans-serif; font-size: 11pt; margin-bottom: 20px; }';
+    echo 'th { background-color: #1e40af; color: #ffffff; font-weight: bold; border: 1px solid #000000; padding: 6px 10px; text-align: left; }';
+    echo 'td { border: 1px solid #d1d5db; padding: 5px 8px; }';
+    echo '.title-cell { font-size: 15pt; font-weight: bold; text-align: center; color: #1e3a8a; }';
+    echo '.meta-header { background-color: #f1f5f9; font-weight: bold; color: #334155; }';
+    echo '.section-header { background-color: #0f172a; color: #ffffff; font-weight: bold; font-size: 12pt; padding: 8px; }';
+    echo '.num { text-align: right; }';
+    echo '.center { text-align: center; }';
+    echo '</style>';
+    echo '</head>';
+    echo '<body>';
+
+    // Header Meta Table
+    echo '<table>';
+    echo '<tr><td colspan="6" class="title-cell">' . htmlspecialchars($reportTitle, ENT_QUOTES, 'UTF-8') . '</td></tr>';
+    foreach ($meta as $k => $v) {
+        echo '<tr><td colspan="2" class="meta-header">' . htmlspecialchars($k, ENT_QUOTES, 'UTF-8') . '</td><td colspan="4">' . htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8') . '</td></tr>';
+    }
+    echo '<tr><td colspan="6">&nbsp;</td></tr>';
+    echo '</table>';
+
+    // Loop through Section Tables
+    foreach ($tables as $tbl) {
+        $colCount = max(1, count($tbl['headers'] ?? [1]));
+        echo '<table>';
+        if (!empty($tbl['title'])) {
+            echo '<tr><td colspan="' . $colCount . '" class="section-header">' . htmlspecialchars($tbl['title'], ENT_QUOTES, 'UTF-8') . '</td></tr>';
+        }
+        if (!empty($tbl['headers'])) {
+            echo '<tr>';
+            foreach ($tbl['headers'] as $th) {
+                echo '<th>' . htmlspecialchars($th, ENT_QUOTES, 'UTF-8') . '</th>';
+            }
+            echo '</tr>';
+        }
+        if (!empty($tbl['rows'])) {
+            foreach ($tbl['rows'] as $r) {
+                echo '<tr>';
+                foreach ($r as $c) {
+                    $isNum = is_numeric(str_replace([',', '.', ' '], '', (string)$c));
+                    $align = $isNum && is_numeric($c) ? 'num' : '';
+                    echo '<td class="' . $align . '">' . htmlspecialchars((string)$c, ENT_QUOTES, 'UTF-8') . '</td>';
+                }
+                echo '</tr>';
+            }
+        }
+        echo '<tr><td colspan="' . $colCount . '">&nbsp;</td></tr>';
+        echo '</table>';
+    }
+
+    // Signers Table
+    if (!empty($signers)) {
+        echo '<table>';
+        echo '<tr><td colspan="6">&nbsp;</td></tr>';
+        echo '<tr>';
+        foreach ($signers as $s) {
+            echo '<td colspan="3" class="center">';
+            echo '<div>' . htmlspecialchars($s['label'] ?? 'Mengetahui,', ENT_QUOTES, 'UTF-8') . '</div>';
+            echo '<div><b>' . htmlspecialchars($s['jabatan'] ?? '', ENT_QUOTES, 'UTF-8') . '</b></div><br><br><br>';
+            echo '<div><u><b>' . htmlspecialchars($s['nama'] ?? '', ENT_QUOTES, 'UTF-8') . '</b></u></div>';
+            echo '<div>NIP. ' . htmlspecialchars($s['nip'] ?? '-', ENT_QUOTES, 'UTF-8') . '</div>';
+            echo '</td>';
+        }
+        echo '</tr>';
+        echo '</table>';
+    }
+
+    echo '</body></html>';
+    exit;
+}
+
 // ── Query Engine for B.2.1.1 (Perputaran Koleksi) ──────────────────────────
 function pakpiGetB211(mysqli $dbs, int $tahun, bool $includeRenewal = false): array {
     $tahun_pattern = $tahun . '-%';

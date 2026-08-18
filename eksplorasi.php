@@ -29,14 +29,17 @@ $current_year = (int)date('Y');
 $tahun        = isset($_GET['tahun']) && is_numeric($_GET['tahun']) ? (int)$_GET['tahun'] : $current_year;
 $indikator    = $_GET['indikator'] ?? 'b211';
 $tahun_pattern = $tahun . '-%';
+$settings     = pakpiLoadSettings();
 
-// ── Export Exploration CSV ──────────────────────────────────────────────────
-if (isset($_GET['action']) && $_GET['action'] === 'export_eksplorasi_csv') {
-    $filename = 'Eksplorasi_' . strtoupper($indikator) . '_' . $tahun . '.csv';
+// ── Export Exploration EXCEL & CSV ──────────────────────────────────────────
+if (isset($_GET['action']) && in_array($_GET['action'], ['export_eksplorasi_csv', 'export_eksplorasi_excel'])) {
+    $isExcel = $_GET['action'] === 'export_eksplorasi_excel';
     $headers = [];
     $rows = [];
+    $tableTitle = '';
 
     if ($indikator === 'b211') {
+        $tableTitle = 'Top 100 Judul Buku Paling Banyak Dipinjam (Tahun ' . $tahun . ')';
         $headers = ['Peringkat', 'Judul Buku', 'ID Biblio', 'Total Peminjaman (Tahun ' . $tahun . ')'];
         $stmt = $dbs->prepare("SELECT b.title, b.biblio_id, COUNT(1) AS total FROM loan AS l INNER JOIN item AS i ON l.item_code=i.item_code INNER JOIN biblio AS b ON i.biblio_id=b.biblio_id WHERE l.loan_date LIKE ? GROUP BY b.biblio_id ORDER BY total DESC LIMIT 100");
         $stmt->bind_param('s', $tahun_pattern);
@@ -47,6 +50,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'export_eksplorasi_csv') {
             $rows[] = [$rank++, $r['title'], $r['biblio_id'], $r['total']];
         }
     } elseif ($indikator === 'b212') {
+        $tableTitle = 'Top 100 Anggota Pemustaka Paling Banyak Meminjam (Tahun ' . $tahun . ')';
         $headers = ['Peringkat', 'ID Anggota', 'Nama Anggota', 'Jenis Keanggotaan', 'Total Peminjaman'];
         $stmt = $dbs->prepare("SELECT m.member_id, m.member_name, mt.member_type_name, COUNT(1) AS total FROM member AS m INNER JOIN loan AS l ON m.member_id=l.member_id INNER JOIN item AS i ON l.item_code=i.item_code INNER JOIN biblio AS b ON i.biblio_id=b.biblio_id INNER JOIN mst_member_type AS mt ON m.member_type_id=mt.member_type_id WHERE l.loan_date LIKE ? GROUP BY m.member_id ORDER BY total DESC LIMIT 100");
         $stmt->bind_param('s', $tahun_pattern);
@@ -57,7 +61,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'export_eksplorasi_csv') {
             $rows[] = [$rank++, $r['member_id'], $r['member_name'], $r['member_type_name'], $r['total']];
         }
     } elseif ($indikator === 'b213') {
-        $headers = ['Peringkat', 'Kode Eksemplar', 'Judul Buku', 'Tahun Pengadaan', 'Status'];
+        $tableTitle = 'Top 100 Koleksi Tidur / Belum Pernah Dipinjam (Tahun ' . $tahun . ')';
+        $headers = ['Peringkat', 'Kode Eksemplar', 'Judul Buku', 'Tanggal Masuk Koleksi', 'Status'];
         $next_year = ($tahun + 1) . '-01-01';
         $stmt = $dbs->prepare("SELECT i.item_code, b.title, b.input_date FROM item AS i INNER JOIN biblio AS b ON i.biblio_id=b.biblio_id WHERE i.item_code NOT IN (SELECT DISTINCT l.item_code FROM loan AS l WHERE l.loan_date LIKE ?) AND b.input_date < ? ORDER BY b.input_date ASC LIMIT 100");
         $stmt->bind_param('ss', $tahun_pattern, $next_year);
@@ -68,6 +73,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'export_eksplorasi_csv') {
             $rows[] = [$rank++, $r['item_code'], $r['title'], $r['input_date'], 'Belum Pernah Dipinjam'];
         }
     } elseif ($indikator === 'b221') {
+        $tableTitle = 'Top 100 Pengunjung Teraktif ke Perpustakaan (Tahun ' . $tahun . ')';
         $headers = ['Peringkat', 'ID Anggota / Pengunjung', 'Nama Pengunjung', 'Total Kunjungan (Tahun ' . $tahun . ')'];
         $stmt = $dbs->prepare("SELECT vc.member_id, vc.member_name, COUNT(1) AS total FROM visitor_count AS vc WHERE vc.checkin_date LIKE ? GROUP BY vc.member_id, vc.member_name ORDER BY total DESC LIMIT 100");
         $stmt->bind_param('s', $tahun_pattern);
@@ -79,7 +85,23 @@ if (isset($_GET['action']) && $_GET['action'] === 'export_eksplorasi_csv') {
         }
     }
 
-    pakpiExportCsv($filename, $headers, $rows);
+    if ($isExcel) {
+        $meta = [
+            'Instansi'       => $settings['instansi'] ?? 'Perpustakaan',
+            'Unit'           => $settings['unit'] ?? 'UPT Perpustakaan',
+            'Tahun Acuan'    => $tahun,
+            'Indikator'      => strtoupper($indikator),
+            'Tanggal Ekspor' => date('d F Y H:i:s')
+        ];
+        $tables = [[
+            'title'   => $tableTitle,
+            'headers' => $headers,
+            'rows'    => $rows
+        ]];
+        pakpiExportExcel('Eksplorasi_' . strtoupper($indikator) . '_' . $tahun . '.xls', 'EKSPLORASI DATA ANALISIS KINERJA PERPUSTAKAAN', $tables, $meta, $settings['signers'] ?? []);
+    } else {
+        pakpiExportCsv('Eksplorasi_' . strtoupper($indikator) . '_' . $tahun . '.csv', $headers, $rows);
+    }
 }
 ?>
 
@@ -139,13 +161,13 @@ if (isset($_GET['action']) && $_GET['action'] === 'export_eksplorasi_csv') {
     <!-- Filter Control -->
     <div class="pakpi-card non-printable">
         <div class="pakpi-card-body p-3">
-            <form method="get" action="<?= pakpiAdminUrl() ?>" class="submitViaAJAX d-flex align-items-center flex-wrap" style="gap: 15px;">
+            <form method="get" action="<?= pakpiAdminUrl() ?>" class="submitViaAJAX d-flex align-items-center flex-wrap" style="gap: 12px;">
                 <input type="hidden" name="mod" value="<?= htmlspecialchars($_GET['mod'] ?? 'reporting', ENT_QUOTES, 'UTF-8') ?>" />
                 <input type="hidden" name="id" value="<?= htmlspecialchars($_GET['id'] ?? '', ENT_QUOTES, 'UTF-8') ?>" />
 
                 <div class="d-flex align-items-center">
                     <label class="font-weight-bold mb-0 mr-2 text-dark">📅 <?= __('Tahun') ?>:</label>
-                    <select name="tahun" class="form-control form-select form-control-sm" style="width: 110px;">
+                    <select name="tahun" class="form-control form-select form-control-sm" style="width: 105px;">
                         <?php for ($y = $current_year; $y >= 2015; $y--): ?>
                             <option value="<?= $y ?>" <?= $y === $tahun ? 'selected' : '' ?>><?= $y ?></option>
                         <?php endfor; ?>
@@ -163,11 +185,17 @@ if (isset($_GET['action']) && $_GET['action'] === 'export_eksplorasi_csv') {
                 </div>
 
                 <button type="submit" class="btn btn-primary btn-sm px-3 py-1 font-weight-bold">
-                    🚀 <?= __('Tampilkan Eksplorasi') ?>
+                    🚀 <?= __('Tampilkan') ?>
                 </button>
 
-                <a href="<?= pakpiAdminUrl(['action' => 'export_eksplorasi_csv', 'tahun' => $tahun, 'indikator' => $indikator]) ?>" class="btn btn-success btn-sm px-3 py-1 font-weight-bold notAJAX" target="_blank">
-                    📊 <?= __('Ekspor Data ke CSV') ?>
+                <!-- Export Excel (.xls) -->
+                <a href="<?= pakpiAdminUrl(['action' => 'export_eksplorasi_excel', 'tahun' => $tahun, 'indikator' => $indikator]) ?>" class="btn btn-success btn-sm px-3 py-1 font-weight-bold notAJAX" target="_blank" title="Unduh Spreadsheet Format Microsoft Excel">
+                    📗 <?= __('Ekspor ke Excel') ?>
+                </a>
+
+                <!-- Export CSV -->
+                <a href="<?= pakpiAdminUrl(['action' => 'export_eksplorasi_csv', 'tahun' => $tahun, 'indikator' => $indikator]) ?>" class="btn btn-outline-success btn-sm px-3 py-1 font-weight-bold notAJAX" target="_blank" title="Unduh Format CSV">
+                    📊 <?= __('Ekspor CSV') ?>
                 </a>
 
                 <button type="button" class="btn btn-secondary btn-sm px-3 py-1 font-weight-bold" onclick="window.print()">

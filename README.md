@@ -94,7 +94,10 @@ Plugin ini mengimplementasikan 4 indikator kinerja utama SNI ISO 2789:2013:
 - 🖨️ **Ekspor & Cetak PDF Berkualitas Tinggi:**
   * Template dokumen A4 standar instansi dengan garis kop ganda resmi, tabel proporsional, dan penataan kolom tanda tangan yang rapi.
   * Terintegrasi langsung dengan dialog cetak dan simpan PDF browser dalam 1 klik (*Exact Vector Rendering*).
-- 📥 **Ekspor CSV (Excel Ready):** Dilengkapi UTF-8 BOM untuk kompatibilitas langsung tanpa konversi di Microsoft Excel.
+- 📥 **Ekspor Spreadsheet Microsoft Excel (.xls) & CSV:**
+  * **Format Excel (.xls):** Ekspor multi-tabel lengkap berformat rapi dengan identitas kop instansi, judul laporan, tabel rincian metrik, dan blok penandatangan resmi.
+  * **Format CSV:** Ekspor data cepat dengan standar RFC 4180 UTF-8 BOM untuk analisis data eksternal.
+  * Mendukung ekspor pada seluruh tab (Dashboard Tahunan, Tren Multi-Tahun, Pola Bulanan, Evaluasi Mutu, dan Eksplorasi Top 100).
 - 🛡️ **Zero Logout Issue & Cross-DB Compatibility:** Menggunakan sesi native SLiMS (bebas bug logout) dan kompatibel lintas database (MySQL 5.7+, MySQL 8.0+, MariaDB 10.1+).
 
 ---
