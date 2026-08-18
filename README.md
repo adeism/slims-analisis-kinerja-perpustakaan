@@ -1,8 +1,8 @@
 # Plugin Analisis Kinerja Perpustakaan (PAKPI) — SLiMS 9 Bulian
 
-Plugin SLiMS 9 Bulian untuk menganalisis dan mengukur indikator kinerja perpustakaan secara otomatis berdasarkan **Pedoman Analisis Kinerja Perpustakaan Indonesia (PAKPI)** dan standar internasional **SNI ISO 2789:2013** (*Informasi dan Dokumentasi — Statistik Perpustakaan Internasional*).
+Plugin SLiMS 9 Bulian untuk menganalisis dan mengukur indikator kinerja perpustakaan secara otomatis berdasarkan **Pedoman Analisis Kinerja Perpustakaan Indonesia (PAKPI)** dan standar **SNI ISO 2789:2013** (*Informasi dan Dokumentasi — Statistik Perpustakaan Internasional*).
 
-Plugin ini membantu pengelola perpustakaan dan pustakawan untuk mengevaluasi efektivitas pemanfaatan koleksi bahan pustaka dan tingkat partisipasi pemustaka secara akurat berbasis data transaksi SLiMS.
+Plugin ini membantu pengelola perpustakaan dan pustakawan untuk mengevaluasi pemanfaatan koleksi bahan pustaka dan keaktifan pemustaka secara akurat berbasis data transaksi SLiMS.
 
 ---
 
@@ -44,16 +44,16 @@ Plugin ini menghitung 4 indikator kinerja utama sesuai klausul SNI ISO 2789:2013
 
 ---
 
-## 📚 Dokumen Referensi & Standar Acuan
+## 📚 Referensi
 
-1. 💻 **[Pedoman Analisis Kinerja Perpustakaan Indonesia (PAKPI 2021)](https://gitlab.com/hendrowicaksono/pedoman-analisis-kinerja-perpustakaan-indonesia/)**  
-   *Panduan resmi dan query analitik berbasis database SLiMS yang disusun oleh Hendro Wicaksono dkk.*
-2. 🌐 **[SNI ISO 2789:2013 — Informasi dan Dokumentasi: Statistik Perpustakaan Internasional](https://pesta.bsn.go.id/produk/detail/9512-sniiso27892013)**  
-   *Standar resmi Badan Standardisasi Nasional (BSN) untuk statistik perpustakaan di Indonesia.*
-3. 📊 **[ISO 11620:2014 — Library Performance Indicators](https://www.iso.org/standard/56757.html)**  
-   *Standar internasional indikator kinerja perpustakaan.*
-4. 📜 **[Undang-Undang RI Nomor 43 Tahun 2007 tentang Perpustakaan](https://jdih.perpusnas.go.id/)** ([Arsip JDIHN BPK RI](https://peraturan.bpk.go.id/Details/39907/uu-no-43-tahun-2007))  
-   *Landasan evaluasi mutu penyelenggaraan perpustakaan di Indonesia.*
+Perhitungan dan formula dalam plugin ini mengacu langsung pada:
+- **Pedoman Analisis Kinerja Perpustakaan Indonesia (PAKPI)** yang disusun oleh Hendro Wicaksono dkk.
+  - Repositori: [https://gitlab.com/hendrowicaksono/pedoman-analisis-kinerja-perpustakaan-indonesia](https://gitlab.com/hendrowicaksono/pedoman-analisis-kinerja-perpustakaan-indonesia)
+  - Standar Acuan: **SNI ISO 2789:2013** (*Informasi dan dokumentasi — Statistik perpustakaan internasional*):
+    - **Klausul B.2.1.1** : Perputaran Koleksi (*Collection Turnover Rate*)
+    - **Klausul B.2.1.2** : Pinjaman Per Kapita (*Loans per Capita*)
+    - **Klausul B.2.1.3** : Persentase Koleksi yang Tidak Digunakan (*Percentage of Dormant Collection*)
+    - **Klausul B.2.2.1** : Kunjungan Perpustakaan Per Kapita (*Library Visits per Capita*)
 
 ---
 
