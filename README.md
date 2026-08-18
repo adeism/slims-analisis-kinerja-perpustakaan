@@ -77,19 +77,24 @@ Plugin ini mengimplementasikan 4 indikator kinerja utama SNI ISO 2789:2013:
 2. Masuk ke SLiMS Admin > **System** > **Plugins**.
 3. Cari **Analisis Kinerja Perpustakaan (PAKPI)** dan klik tombol **Activate (Aktifkan)**.
 4. Akses modul melalui menu **Pelaporan (Reporting)**:
-   * **Analisis Kinerja Perpustakaan (PAKPI)** — Dashboard eksekutif, tren multi-tahun, dan narasi evaluasi.
+   * **Analisis Kinerja Perpustakaan (PAKPI)** — Dashboard eksekutif, tren multi-tahun, narasi evaluasi, cetak PDF resmi, dan pengaturan kop surat.
    * **Eksplorasi Analisis Kinerja** — Rincian Top 30 judul terpopuler, subyek teraktif, anggota peminjam terbanyak, dan daftar koleksi tidur.
 
 ---
 
-## 🚀 Fitur Unggulan Versi 1.1.0
+## 🚀 Fitur Unggulan Versi 1.2.0
 
 - 📊 **Executive Scorecards:** Kartu metrik ringkas dengan kode warna standar ISO.
 - 📈 **Tren Multi-Tahun (3–5 Tahun):** Matriks komparasi tahun ke tahun (*Year-over-Year Trend*) yang siap salin ke dokumen borang akreditasi.
 - 📅 **Distribusi Musiman (Bulanan):** Grafik fluktuasi peminjaman dan kehadiran pengunjung dari Januari hingga Desember.
 - 💡 **Evaluasi & Rekomendasi Mutu Otomatis (*Actionable Insights*):** Sistem narasi otomatis yang memberikan saran manajerial bagi pustakawan.
+- ⚙️ **Kustomisasi Kop & Penandatangan Laporan (Halaman Pengaturan):**
+  * Bebas mengatur Nama Instansi/Kementerian/Universitas, Unit Perpustakaan, Alamat Lengkap, dan Kota.
+  * Penandatangan dinamis (bisa disesuaikan 1 s.d. 4 orang: Kepala Perpustakaan, Pustakawan Pengolah, Wakil Rektor/Dekan, Kepala Sekolah, dll.).
+- 🖨️ **Ekspor & Cetak PDF Berkualitas Tinggi:**
+  * Template dokumen A4 standar instansi dengan garis kop ganda resmi, tabel proporsional, dan penataan kolom tanda tangan yang rapi.
+  * Terintegrasi langsung dengan dialog cetak dan simpan PDF browser dalam 1 klik (*Exact Vector Rendering*).
 - 📥 **Ekspor CSV (Excel Ready):** Dilengkapi UTF-8 BOM untuk kompatibilitas langsung tanpa konversi di Microsoft Excel.
-- 🖨️ **Print Sheet Resmi:** Tata letak cetak ramah printer dengan kolom tanda tangan resmi Kepala Perpustakaan & Pustakawan Pengolah.
 - 🛡️ **Zero Logout Issue & Cross-DB Compatibility:** Menggunakan sesi native SLiMS (bebas bug logout) dan kompatibel lintas database (MySQL 5.7+, MySQL 8.0+, MariaDB 10.1+).
 
 ---

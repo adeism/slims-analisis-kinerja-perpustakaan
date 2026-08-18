@@ -17,7 +17,8 @@ if (!isset($_SESSION['uid']) || empty($_SESSION['uid'])) {
     die('<div class="alert alert-danger m-3">' . __('You are not authorized to view this section') . '</div>');
 }
 
-$can_read = utility::havePrivilege('reporting', 'r');
+$can_read  = utility::havePrivilege('reporting', 'r');
+$can_write = utility::havePrivilege('reporting', 'w');
 if (!$can_read) {
     die('<div class="alert alert-danger m-3">' . __('You do not have permission to access this module!') . '</div>');
 }
@@ -31,6 +32,64 @@ $tab                 = $_GET['tab'] ?? 'summary';
 $include_renewal     = isset($_GET['include_renewal']) && $_GET['include_renewal'] == '1';
 $only_active_members = isset($_GET['only_active_members']) && $_GET['only_active_members'] == '1';
 $table_only          = isset($_GET['table_only']) && $_GET['table_only'] == '1';
+
+// Handle Save Settings Action
+$msg_success = '';
+$msg_error   = '';
+
+if (isset($_POST['save_settings'])) {
+    if (!$can_write) {
+        $msg_error = 'Anda tidak memiliki hak akses untuk mengubah pengaturan!';
+    } elseif (!pakpiValidateCsrf()) {
+        $msg_error = 'Token keamanan (CSRF) tidak valid!';
+    } else {
+        $signers = [];
+        if (!empty($_POST['signers']) && is_array($_POST['signers'])) {
+            foreach ($_POST['signers'] as $s) {
+                $lbl = trim($s['label'] ?? '');
+                $jab = trim($s['jabatan'] ?? '');
+                $nam = trim($s['nama'] ?? '');
+                $nip = trim($s['nip'] ?? '');
+                if ($jab !== '' || $nam !== '') {
+                    $signers[] = [
+                        'label'   => $lbl ?: 'Mengetahui,',
+                        'jabatan' => $jab,
+                        'nama'    => $nam,
+                        'nip'     => $nip
+                    ];
+                }
+            }
+        }
+        if (empty($signers)) {
+            $signers[] = [
+                'label'   => 'Mengetahui,',
+                'jabatan' => 'Kepala Perpustakaan',
+                'nama'    => '',
+                'nip'     => ''
+            ];
+        }
+
+        $newSettings = [
+            'instansi' => trim($_POST['instansi'] ?? ''),
+            'unit'     => trim($_POST['unit'] ?? ''),
+            'alamat'   => trim($_POST['alamat'] ?? ''),
+            'kota'     => trim($_POST['kota'] ?? 'Jakarta'),
+            'signers'  => $signers
+        ];
+
+        if (pakpiSaveSettings($newSettings)) {
+            $msg_success = 'Pengaturan kop laporan dan penandatangan berhasil disimpan!';
+        } else {
+            $msg_error = 'Gagal menyimpan pengaturan ke settings.json!';
+        }
+    }
+}
+
+// Handle Standalone Print / PDF View
+if (isset($_GET['action']) && $_GET['action'] === 'print_view') {
+    require __DIR__ . '/inc/print_report.inc.php';
+    exit;
+}
 
 // Handle CSV Export
 if (isset($_GET['action']) && $_GET['action'] === 'export_csv') {
@@ -89,6 +148,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'export_csv') {
 }
 
 // Calculate Indicator Data
+$settings = pakpiLoadSettings();
 $dataB211 = pakpiGetB211($dbs, $tahun, $include_renewal);
 $dataB212 = pakpiGetB212($dbs, $tahun, $include_renewal, $only_active_members);
 $dataB213 = pakpiGetB213($dbs, $tahun);
@@ -171,6 +231,7 @@ $insights = pakpiGenerateInsights($dataB211, $dataB212, $dataB213, $dataB221);
     margin-bottom: 20px;
     padding-left: 0;
     list-style: none;
+    flex-wrap: wrap;
 }
 .pakpi-nav-item a {
     display: inline-block;
@@ -190,26 +251,16 @@ $insights = pakpiGenerateInsights($dataB211, $dataB212, $dataB213, $dataB221);
     color: #2563eb;
     border-bottom-color: #2563eb;
 }
-.pakpi-signature-block {
-    display: none;
-    margin-top: 40px;
-    page-break-inside: avoid;
+.signer-row {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 14px;
+    margin-bottom: 12px;
 }
 @media print {
     .non-printable, .menuBox, .pakpi-filter-box, .btn, .pakpi-nav-tabs {
         display: none !important;
-    }
-    body, .container-fluid {
-        background: #fff !important;
-        padding: 0 !important;
-    }
-    .pakpi-card {
-        border: 1px solid #ccc !important;
-        box-shadow: none !important;
-        page-break-inside: avoid;
-    }
-    .pakpi-signature-block {
-        display: block !important;
     }
 }
 </style>
@@ -221,13 +272,25 @@ $insights = pakpiGenerateInsights($dataB211, $dataB212, $dataB213, $dataB221);
         </div>
         <div class="sub_section">
             <div class="text-muted small">
-                <?= __('Standar Internasional SNI ISO 2789:2013 &amp; ISO 11620:2014 untuk Evaluasi dan Akreditasi Perpustakaan.') ?>
+                <?= __('Standar Internasional SNI ISO 2789:2013 &amp; ISO 11620:2014 untuk Evaluasi dan Borang Akreditasi Perpustakaan.') ?>
             </div>
         </div>
     </div>
 </div>
 
 <div class="container-fluid px-0">
+    <!-- Messages -->
+    <?php if ($msg_success): ?>
+        <div class="alert alert-success alert-dismissible fade show shadow-sm mb-4" role="alert">
+            <strong>✅ <?= __('Berhasil:') ?></strong> <?= htmlspecialchars($msg_success, ENT_QUOTES, 'UTF-8') ?>
+        </div>
+    <?php endif; ?>
+    <?php if ($msg_error): ?>
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-4" role="alert">
+            <strong>❌ <?= __('Perhatian:') ?></strong> <?= htmlspecialchars($msg_error, ENT_QUOTES, 'UTF-8') ?>
+        </div>
+    <?php endif; ?>
+
     <!-- View Navigation Tabs -->
     <ul class="pakpi-nav-tabs non-printable">
         <li class="pakpi-nav-item <?= $tab === 'summary' ? 'active' : '' ?>">
@@ -250,62 +313,69 @@ $insights = pakpiGenerateInsights($dataB211, $dataB212, $dataB213, $dataB221);
                 💡 <?= __('Evaluasi &amp; Rekomendasi Mutu') ?>
             </a>
         </li>
+        <li class="pakpi-nav-item <?= $tab === 'settings' ? 'active' : '' ?>">
+            <a href="<?= pakpiAdminUrl(['tab' => 'settings', 'tahun' => $tahun]) ?>">
+                ⚙️ <?= __('Pengaturan Laporan &amp; Penandatangan') ?>
+            </a>
+        </li>
     </ul>
 
-    <!-- Filter Bar -->
-    <div class="pakpi-card pakpi-filter-box non-printable">
-        <div class="pakpi-card-body p-3">
-            <form method="get" action="<?= pakpiAdminUrl() ?>" class="inline-form submitViaAJAX d-flex align-items-center flex-wrap" style="gap: 15px;">
-                <input type="hidden" name="mod" value="<?= htmlspecialchars($_GET['mod'] ?? 'reporting', ENT_QUOTES, 'UTF-8') ?>" />
-                <input type="hidden" name="id" value="<?= htmlspecialchars($_GET['id'] ?? '', ENT_QUOTES, 'UTF-8') ?>" />
-                <input type="hidden" name="tab" value="<?= htmlspecialchars($tab, ENT_QUOTES, 'UTF-8') ?>" />
+    <?php if ($tab !== 'settings'): ?>
+        <!-- Filter Bar -->
+        <div class="pakpi-card pakpi-filter-box non-printable">
+            <div class="pakpi-card-body p-3">
+                <form method="get" action="<?= pakpiAdminUrl() ?>" class="inline-form submitViaAJAX d-flex align-items-center flex-wrap" style="gap: 15px;">
+                    <input type="hidden" name="mod" value="<?= htmlspecialchars($_GET['mod'] ?? 'reporting', ENT_QUOTES, 'UTF-8') ?>" />
+                    <input type="hidden" name="id" value="<?= htmlspecialchars($_GET['id'] ?? '', ENT_QUOTES, 'UTF-8') ?>" />
+                    <input type="hidden" name="tab" value="<?= htmlspecialchars($tab, ENT_QUOTES, 'UTF-8') ?>" />
 
-                <div class="d-flex align-items-center">
-                    <label class="font-weight-bold mb-0 mr-2 text-dark">📅 <?= __('Tahun Acuan') ?>:</label>
-                    <select name="tahun" class="form-control form-select form-control-sm" style="width: 110px;">
-                        <?php for ($y = $current_year; $y >= 2015; $y--): ?>
-                            <option value="<?= $y ?>" <?= $y === $tahun ? 'selected' : '' ?>><?= $y ?></option>
-                        <?php endfor; ?>
-                    </select>
-                </div>
-
-                <?php if ($tab === 'summary'): ?>
-                    <div class="form-check mb-0">
-                        <input class="form-check-input" type="checkbox" name="include_renewal" value="1" id="chkRenewal" <?= $include_renewal ? 'checked' : '' ?>>
-                        <label class="form-check-label text-dark small font-weight-bold" for="chkRenewal">
-                            <?= __('Termasuk Perpanjangan') ?>
-                        </label>
+                    <div class="d-flex align-items-center">
+                        <label class="font-weight-bold mb-0 mr-2 text-dark">📅 <?= __('Tahun Acuan') ?>:</label>
+                        <select name="tahun" class="form-control form-select form-control-sm" style="width: 110px;">
+                            <?php for ($y = $current_year; $y >= 2015; $y--): ?>
+                                <option value="<?= $y ?>" <?= $y === $tahun ? 'selected' : '' ?>><?= $y ?></option>
+                            <?php endfor; ?>
+                        </select>
                     </div>
 
-                    <div class="form-check mb-0">
-                        <input class="form-check-input" type="checkbox" name="only_active_members" value="1" id="chkActive" <?= $only_active_members ? 'checked' : '' ?>>
-                        <label class="form-check-label text-dark small font-weight-bold" for="chkActive">
-                            <?= __('Hanya Anggota Aktif') ?>
-                        </label>
-                    </div>
+                    <?php if ($tab === 'summary'): ?>
+                        <div class="form-check mb-0">
+                            <input class="form-check-input" type="checkbox" name="include_renewal" value="1" id="chkRenewal" <?= $include_renewal ? 'checked' : '' ?>>
+                            <label class="form-check-label text-dark small font-weight-bold" for="chkRenewal">
+                                <?= __('Termasuk Perpanjangan') ?>
+                            </label>
+                        </div>
 
-                    <div class="form-check mb-0">
-                        <input class="form-check-input" type="checkbox" name="table_only" value="1" id="chkTableOnly" <?= $table_only ? 'checked' : '' ?>>
-                        <label class="form-check-label text-dark small font-weight-bold" for="chkTableOnly">
-                            <?= __('Tabel Saja') ?>
-                        </label>
-                    </div>
-                <?php endif; ?>
+                        <div class="form-check mb-0">
+                            <input class="form-check-input" type="checkbox" name="only_active_members" value="1" id="chkActive" <?= $only_active_members ? 'checked' : '' ?>>
+                            <label class="form-check-label text-dark small font-weight-bold" for="chkActive">
+                                <?= __('Hanya Anggota Aktif') ?>
+                            </label>
+                        </div>
 
-                <button type="submit" class="btn btn-primary btn-sm px-3 py-1 font-weight-bold">
-                    🔍 <?= __('Tampilkan') ?>
-                </button>
+                        <div class="form-check mb-0">
+                            <input class="form-check-input" type="checkbox" name="table_only" value="1" id="chkTableOnly" <?= $table_only ? 'checked' : '' ?>>
+                            <label class="form-check-label text-dark small font-weight-bold" for="chkTableOnly">
+                                <?= __('Tabel Saja') ?>
+                            </label>
+                        </div>
+                    <?php endif; ?>
 
-                <a href="<?= pakpiAdminUrl(['action' => 'export_csv', 'tab' => $tab, 'tahun' => $tahun, 'include_renewal' => $include_renewal ? 1 : 0, 'only_active_members' => $only_active_members ? 1 : 0]) ?>" class="btn btn-success btn-sm px-3 py-1 font-weight-bold notAJAX" target="_blank">
-                    📊 <?= __('Ekspor ke CSV (Excel)') ?>
-                </a>
+                    <button type="submit" class="btn btn-primary btn-sm px-3 py-1 font-weight-bold">
+                        🔍 <?= __('Tampilkan') ?>
+                    </button>
 
-                <button type="button" class="btn btn-secondary btn-sm px-3 py-1 font-weight-bold" onclick="window.print()">
-                    🖨️ <?= __('Cetak Laporan') ?>
-                </button>
-            </form>
+                    <a href="<?= pakpiAdminUrl(['action' => 'export_csv', 'tab' => $tab, 'tahun' => $tahun, 'include_renewal' => $include_renewal ? 1 : 0, 'only_active_members' => $only_active_members ? 1 : 0]) ?>" class="btn btn-success btn-sm px-3 py-1 font-weight-bold notAJAX" target="_blank">
+                        📊 <?= __('Ekspor ke CSV') ?>
+                    </a>
+
+                    <a href="<?= pakpiAdminUrl(['action' => 'print_view', 'tahun' => $tahun, 'include_renewal' => $include_renewal ? 1 : 0, 'only_active_members' => $only_active_members ? 1 : 0]) ?>" target="_blank" class="btn btn-secondary btn-sm px-3 py-1 font-weight-bold notAJAX">
+                        🖨️ <?= __('Cetak / Simpan ke PDF') ?>
+                    </a>
+                </form>
+            </div>
         </div>
-    </div>
+    <?php endif; ?>
 
     <!-- ════════════════════════════════════════════════════════════════════ -->
     <!-- TAB 1: DASHBOARD METRIK TAHUNAN                                      -->
@@ -624,18 +694,18 @@ $insights = pakpiGenerateInsights($dataB211, $dataB212, $dataB213, $dataB221);
                                     <td class="font-weight-bold text-dark"><?= $m['month_name'] ?></td>
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            <div class="pakpi-bar-container mr-2">
-                                                <div class="pakpi-bar-fill bg-primary" style="width: <?= $pctL ?>%;"></div>
+                                            <div class="pakpi-bar-container mr-2" style="background: #f1f5f9; border-radius: 6px; height: 26px; position: relative; overflow: hidden; flex: 1;">
+                                                <div class="pakpi-bar-fill bg-primary" style="width: <?= $pctL ?>%; height: 100%;"></div>
                                             </div>
-                                            <span class="small font-weight-bold" style="min-width: 60px;"><?= number_format($m['loans']) ?></span>
+                                            <span class="small font-weight-bold text-right" style="min-width: 60px;"><?= number_format($m['loans']) ?></span>
                                         </div>
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            <div class="pakpi-bar-container mr-2">
-                                                <div class="pakpi-bar-fill bg-success" style="width: <?= $pctV ?>%;"></div>
+                                            <div class="pakpi-bar-container mr-2" style="background: #f1f5f9; border-radius: 6px; height: 26px; position: relative; overflow: hidden; flex: 1;">
+                                                <div class="pakpi-bar-fill bg-success" style="width: <?= $pctV ?>%; height: 100%;"></div>
                                             </div>
-                                            <span class="small font-weight-bold" style="min-width: 60px;"><?= number_format($m['visits']) ?></span>
+                                            <span class="small font-weight-bold text-right" style="min-width: 60px;"><?= number_format($m['visits']) ?></span>
                                         </div>
                                     </td>
                                 </tr>
@@ -681,23 +751,148 @@ $insights = pakpiGenerateInsights($dataB211, $dataB212, $dataB213, $dataB221);
                 </div>
             </div>
         </div>
-    <?php endif; ?>
 
-    <!-- Official Signature Block for Print Mode -->
-    <div class="pakpi-signature-block">
-        <div style="display: flex; justify-content: space-between; margin-top: 50px;">
-            <div style="width: 40%; text-align: center;">
-                <div>Mengetahui,</div>
-                <div style="font-weight: bold; margin-bottom: 70px;">Kepala Perpustakaan</div>
-                <div style="border-bottom: 1px solid #000; width: 80%; margin: 0 auto;"></div>
-                <div style="font-size: 12px; margin-top: 4px;">NIP / NIDN. ........................................</div>
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <!-- TAB 5: PENGATURAN LAPORAN & PENANDATANGAN                            -->
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <?php elseif ($tab === 'settings'): ?>
+        <div class="pakpi-card">
+            <div class="pakpi-card-header">
+                <h5 class="mb-0 font-weight-bold text-dark">
+                    ⚙️ <?= __('Pengaturan Kop Surat &amp; Penandatangan Laporan Cetak') ?>
+                </h5>
+                <span class="badge badge-secondary bg-secondary text-white px-2 py-1">Kustomisasi Dokumen</span>
             </div>
-            <div style="width: 40%; text-align: center;">
-                <div>Dibuat pada: <?= date('d F Y') ?></div>
-                <div style="font-weight: bold; margin-bottom: 70px;">Pustakawan / Analis Data</div>
-                <div style="border-bottom: 1px solid #000; width: 80%; margin: 0 auto;"></div>
-                <div style="font-size: 12px; margin-top: 4px;">NIP / NIDN. ........................................</div>
+            <div class="pakpi-card-body">
+                <div class="pakpi-desc">
+                    Sesuaikan identitas instansi, alamat kop surat, serta daftar pejabat penandatangan laporan (bisa disesuaikan 1 s.d. 4 orang penandatangan: Kepala Perpustakaan, Pustakawan, Wadir/Warek, Dekan, Kepala Sekolah, dll.).
+                </div>
+
+                <form method="post" action="<?= pakpiAdminUrl(['tab' => 'settings']) ?>" class="submitViaAJAX">
+                    <input type="hidden" name="csrf_token" value="<?= pakpiGetCsrfToken() ?>">
+                    <input type="hidden" name="save_settings" value="1">
+
+                    <!-- Kop Surat Identitas -->
+                    <h6 class="font-weight-bold text-primary mb-3 border-bottom pb-2">🏢 Identitas Lembaga &amp; Kop Laporan</h6>
+                    <div class="row mb-3">
+                        <div class="col-md-6 form-group mb-3">
+                            <label class="font-weight-bold text-dark mb-1">Nama Instansi / Lembaga / Yayasan / Kementerian:</label>
+                            <input type="text" name="instansi" class="form-control" value="<?= htmlspecialchars($settings['instansi'] ?? '', ENT_QUOTES, 'UTF-8') ?>" placeholder="Contoh: UNIVERSITAS INDONESIA / KEMENTERIAN PENDIDIKAN" required>
+                        </div>
+                        <div class="col-md-6 form-group mb-3">
+                            <label class="font-weight-bold text-dark mb-1">Nama Unit / Gedung Perpustakaan:</label>
+                            <input type="text" name="unit" class="form-control" value="<?= htmlspecialchars($settings['unit'] ?? '', ENT_QUOTES, 'UTF-8') ?>" placeholder="Contoh: UPT PERPUSTAKAAN DAN ARSIP" required>
+                        </div>
+                        <div class="col-md-8 form-group mb-3">
+                            <label class="font-weight-bold text-dark mb-1">Alamat Lengkap &amp; Kontak Resmi:</label>
+                            <input type="text" name="alamat" class="form-control" value="<?= htmlspecialchars($settings['alamat'] ?? '', ENT_QUOTES, 'UTF-8') ?>" placeholder="Contoh: Jl. Salemba Raya No. 4, Jakarta Pusat - Telp: (021) 1234567 | perpustakaan.ac.id">
+                        </div>
+                        <div class="col-md-4 form-group mb-3">
+                            <label class="font-weight-bold text-dark mb-1">Kota Tempat Pembuatan Laporan:</label>
+                            <input type="text" name="kota" class="form-control" value="<?= htmlspecialchars($settings['kota'] ?? 'Jakarta', ENT_QUOTES, 'UTF-8') ?>" placeholder="Contoh: Jakarta / Yogyakarta / Bandung" required>
+                        </div>
+                    </div>
+
+                    <!-- Daftar Pejabat Penandatangan -->
+                    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                        <h6 class="font-weight-bold text-primary mb-0">✍️ Pejabat Penandatangan Dokumen</h6>
+                        <button type="button" class="btn btn-outline-primary btn-sm font-weight-bold" onclick="addSignerRow()">
+                            ➕ Tambah Penandatangan
+                        </button>
+                    </div>
+
+                    <div id="signersContainer">
+                        <?php 
+                        $signers = $settings['signers'] ?? [];
+                        foreach ($signers as $idx => $s): 
+                        ?>
+                            <div class="signer-row" id="signerRow_<?= $idx ?>">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="badge badge-secondary bg-secondary text-white">Penandatangan #<span class="signer-index"><?= $idx + 1 ?></span></span>
+                                    <button type="button" class="btn btn-outline-danger btn-sm py-0 px-2" onclick="removeSignerRow(this)">Hapus</button>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-3 form-group mb-2">
+                                        <label class="small font-weight-bold text-dark">Label Hubungan:</label>
+                                        <input type="text" name="signers[<?= $idx ?>][label]" class="form-control form-control-sm" value="<?= htmlspecialchars($s['label'] ?? 'Mengetahui,', ENT_QUOTES, 'UTF-8') ?>" placeholder="Mengetahui / Dibuat Oleh">
+                                    </div>
+                                    <div class="col-md-3 form-group mb-2">
+                                        <label class="small font-weight-bold text-dark">Jabatan Resmi:</label>
+                                        <input type="text" name="signers[<?= $idx ?>][jabatan]" class="form-control form-control-sm" value="<?= htmlspecialchars($s['jabatan'] ?? '', ENT_QUOTES, 'UTF-8') ?>" placeholder="Kepala Perpustakaan" required>
+                                    </div>
+                                    <div class="col-md-3 form-group mb-2">
+                                        <label class="small font-weight-bold text-dark">Nama Lengkap &amp; Gelar:</label>
+                                        <input type="text" name="signers[<?= $idx ?>][nama]" class="form-control form-control-sm" value="<?= htmlspecialchars($s['nama'] ?? '', ENT_QUOTES, 'UTF-8') ?>" placeholder="Dra. Siti Aminah, M.Hum." required>
+                                    </div>
+                                    <div class="col-md-3 form-group mb-2">
+                                        <label class="small font-weight-bold text-dark">NIP / NIDN / NIK:</label>
+                                        <input type="text" name="signers[<?= $idx ?>][nip]" class="form-control form-control-sm" value="<?= htmlspecialchars($s['nip'] ?? '', ENT_QUOTES, 'UTF-8') ?>" placeholder="19750101 200003 2 001">
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <div class="mt-4 pt-2">
+                        <button type="submit" class="btn btn-primary px-4 py-2 font-weight-bold shadow-sm">
+                            💾 <?= __('Simpan Pengaturan') ?>
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
-    </div>
+
+        <script>
+        function addSignerRow() {
+            var container = document.getElementById('signersContainer');
+            var count = container.getElementsByClassName('signer-row').length;
+            var newIndex = count;
+            
+            var div = document.createElement('div');
+            div.className = 'signer-row';
+            div.id = 'signerRow_' + newIndex;
+            div.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="badge badge-secondary bg-secondary text-white">Penandatangan #<span class="signer-index">${newIndex + 1}</span></span>
+                    <button type="button" class="btn btn-outline-danger btn-sm py-0 px-2" onclick="removeSignerRow(this)">Hapus</button>
+                </div>
+                <div class="row">
+                    <div class="col-md-3 form-group mb-2">
+                        <label class="small font-weight-bold text-dark">Label Hubungan:</label>
+                        <input type="text" name="signers[${newIndex}][label]" class="form-control form-control-sm" value="Mengetahui," placeholder="Mengetahui / Dibuat Oleh">
+                    </div>
+                    <div class="col-md-3 form-group mb-2">
+                        <label class="small font-weight-bold text-dark">Jabatan Resmi:</label>
+                        <input type="text" name="signers[${newIndex}][jabatan]" class="form-control form-control-sm" placeholder="Jabatan Pejabat" required>
+                    </div>
+                    <div class="col-md-3 form-group mb-2">
+                        <label class="small font-weight-bold text-dark">Nama Lengkap &amp; Gelar:</label>
+                        <input type="text" name="signers[${newIndex}][nama]" class="form-control form-control-sm" placeholder="Nama Lengkap" required>
+                    </div>
+                    <div class="col-md-3 form-group mb-2">
+                        <label class="small font-weight-bold text-dark">NIP / NIDN / NIK:</label>
+                        <input type="text" name="signers[${newIndex}][nip]" class="form-control form-control-sm" placeholder="NIP / NIDN">
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        function removeSignerRow(btn) {
+            var container = document.getElementById('signersContainer');
+            var rows = container.getElementsByClassName('signer-row');
+            if (rows.length <= 1) {
+                alert('Minimal harus ada 1 orang penandatangan!');
+                return;
+            }
+            btn.closest('.signer-row').remove();
+            
+            // Reindex
+            var remaining = container.getElementsByClassName('signer-row');
+            for (var i = 0; i < remaining.length; i++) {
+                remaining[i].querySelector('.signer-index').innerText = (i + 1);
+            }
+        }
+        </script>
+    <?php endif; ?>
 </div>

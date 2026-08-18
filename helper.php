@@ -14,6 +14,60 @@ function pakpiAdminUrl(array $params = []): string {
     return $self . '?' . http_build_query($query);
 }
 
+// ── CSRF Protection ────────────────────────────────────────────────────────
+function pakpiGetCsrfToken(): string {
+    if (empty($_SESSION['pakpi_csrf'])) {
+        $_SESSION['pakpi_csrf'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['pakpi_csrf'];
+}
+
+function pakpiValidateCsrf(): bool {
+    $token = $_POST['csrf_token'] ?? '';
+    return !empty($token) && hash_equals($_SESSION['pakpi_csrf'] ?? '', $token);
+}
+
+// ── Report & Signer Settings ───────────────────────────────────────────────
+function pakpiLoadSettings(): array {
+    $defaults = [
+        'instansi' => 'KEMENTERIAN PENDIDIKAN, KEBUDAYAAN, RISET, DAN TEKNOLOGI',
+        'unit'     => 'UPT PERPUSTAKAAN',
+        'alamat'   => 'Jl. Perpustakaan No. 1, Kota, Indonesia - Telp: (021) 1234567 | Website: perpustakaan.ac.id',
+        'kota'     => 'Jakarta',
+        'signers'  => [
+            [
+                'label'   => 'Mengetahui,',
+                'jabatan' => 'Kepala Perpustakaan',
+                'nama'    => 'Dra. Hj. Siti Nurhaliza, M.Hum.',
+                'nip'     => '19750101 200003 2 001'
+            ],
+            [
+                'label'   => 'Dibuat Oleh,',
+                'jabatan' => 'Pustakawan / Analis Kinerja',
+                'nama'    => 'Ahmad Fauzi, S.I.Pust.',
+                'nip'     => '19880512 201402 1 003'
+            ]
+        ]
+    ];
+
+    $path = __DIR__ . '/settings.json';
+    if (file_exists($path)) {
+        $content = @file_get_contents($path);
+        if ($content) {
+            $data = json_decode($content, true);
+            if (is_array($data)) {
+                return array_merge($defaults, $data);
+            }
+        }
+    }
+    return $defaults;
+}
+
+function pakpiSaveSettings(array $settings): bool {
+    $path = __DIR__ . '/settings.json';
+    return (bool)@file_put_contents($path, json_encode($settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+}
+
 // ── CSV Exporter (RFC 4180 with UTF-8 BOM) ─────────────────────────────────
 function pakpiExportCsv(string $filename, array $headers, array $rows): void {
     if (ob_get_level()) {
