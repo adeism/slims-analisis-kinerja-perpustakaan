@@ -1,16 +1,16 @@
 <?php
 /**
- * Plugin Name: Analisis Kinerja Perpustakaan
+ * Plugin Name: Analisis Kinerja Perpustakaan (PAKPI)
  * Plugin URI: https://github.com/adeism/slims-analisis-kinerja-perpustakaan
- * Description: Plugin untuk menganalisis kinerja perpustakaan berdasarkan Pedoman Analisis Kinerja Perpustakaan Indonesia (GitLab Hendro Wicaksono: https://gitlab.com/hendrowicaksono/pedoman-analisis-kinerja-perpustakaan-indonesia/) 
- * Version: 1.0.0
- * Author: Ade Ismail Siregar (adeismailbox@gmail.com)
+ * Description: Plugin analisis kinerja perpustakaan berdasarkan standar SNI ISO 2789:2013 dan Pedoman Analisis Kinerja Perpustakaan Indonesia (PAKPI).
+ * Version: 1.1.0
+ * Author: Ade Ismail Siregar
  * Author URI: https://github.com/adeism
  */
 
 use SLiMS\Plugins;
 
-// Register menu menggunakan pattern official
+// Register admin menus under reporting module
 $plugin = Plugins::getInstance();
-$plugin->registerMenu('reporting', 'Analisis Kinerja Perpustakaan', __DIR__ . '/index.php');
-$plugin->registerMenu('reporting', 'Eksplorasi Analisis Kinerja Perpustakaan', __DIR__ . '/eksplorasi.php');
+$plugin->registerMenu('reporting', 'Analisis Kinerja Perpustakaan (PAKPI)', __DIR__ . '/index.php');
+$plugin->registerMenu('reporting', 'Eksplorasi Analisis Kinerja', __DIR__ . '/eksplorasi.php');
