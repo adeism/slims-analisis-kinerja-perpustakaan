@@ -2,12 +2,8 @@
 /**
  * Helper Functions - Plugin Analisis Kinerja Perpustakaan Indonesia (PAKPI)
  * 
- * Mengacu pada Standar Nasional Perpustakaan (SNP) Perpusnas RI:
- * - Peraturan Perpustakaan Nasional RI No. 5 Tahun 2024 (Perpustakaan Perguruan Tinggi)
- * - Peraturan Perpustakaan Nasional RI No. 4 Tahun 2024 (Perpustakaan Sekolah/Madrasah)
- * - Peraturan Perpustakaan Nasional RI No. 11 Tahun 2021 (Perpustakaan Khusus)
- * - Standar Internasional SNI ISO 2789:2013 & ISO 11620:2014
- * - Instrumen Akreditasi 9 Komponen Perpustakaan Nasional RI
+ * Berdasarkan Pedoman Analisis Kinerja Perpustakaan Indonesia (PAKPI)
+ * dan Standar Internasional SNI ISO 2789:2013 & ISO 11620:2014
  */
 
 defined('INDEX_AUTH') OR die('Direct access not allowed');
