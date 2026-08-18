@@ -300,7 +300,7 @@ $tglCetak = date('j') . ' ' . $bulanIndo[(int)date('n')] . ' ' . date('Y');
 <div class="doc-title-container">
     <div class="doc-title">LAPORAN ANALISIS KINERJA PERPUSTAKAAN</div>
     <div class="doc-subtitle">
-        Tahun Evaluasi: <strong><?= $tahun ?></strong> | Standar Acuan: <strong>Standar Nasional Perpustakaan (SNP Perpusnas RI 2024), SNI ISO 2789:2013 &amp; ISO 11620:2014</strong>
+        Tahun Evaluasi: <strong><?= $tahun ?></strong> | Standar Acuan: <strong>Pedoman Analisis Kinerja Perpustakaan Indonesia (PAKPI) &amp; SNI ISO 2789:2013</strong>
     </div>
 </div>
 
@@ -448,7 +448,7 @@ $tglCetak = date('j') . ' ' . $bulanIndo[(int)date('n')] . ' ' . date('Y');
 
 <!-- Evaluasi & Rekomendasi Mutu -->
 <div class="insights-box">
-    <div class="insights-title">📋 Evaluasi Capaian &amp; Rekomendasi Manajerial (Standar Nasional Perpustakaan RI):</div>
+    <div class="insights-title">📋 Evaluasi Capaian &amp; Rekomendasi Manajerial Kinerja:</div>
     <ul class="insights-list">
         <?php foreach ($insights as $ins): ?>
             <li>

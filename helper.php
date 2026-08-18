@@ -424,7 +424,7 @@ function pakpiGetMonthlyTrend(mysqli $dbs, int $tahun): array {
     return $data;
 }
 
-// ── Actionable Insights Generator Berbasis Standar SNP Perpusnas RI ────────
+// ── Actionable Insights Generator (Rekomendasi Mutu & Analisis Kinerja) ─────
 function pakpiGenerateInsights(array $dataB211, array $dataB212, array $dataB213, array $dataB221): array {
     $insights = [];
 
@@ -434,61 +434,61 @@ function pakpiGenerateInsights(array $dataB211, array $dataB212, array $dataB213
     $utilizationPct = $dataB213['pct_digunakan'] ?? 0;
     $visitsPerCap = $dataB221['nilai'] ?? 0;
 
-    // 1. Evaluasi Komponen Koleksi: Perputaran Koleksi (SNP Perpusnas RI 2024)
+    // 1. Evaluasi B.2.1.1: Perputaran Koleksi (Collection Turnover)
     if ($turnover >= 1.0) {
         $insights[] = [
             'type'    => 'success',
             'icon'    => '🌟',
-            'title'   => 'Perputaran Koleksi Memenuhi Standar Nasional (SNP Perpusnas RI)',
-            'message' => 'Angka perputaran koleksi sebesar ' . $turnover . ' kali/eksemplar/tahun melampaui batas standar minimum SNP Perpusnas RI (> 0.5 - 1.0), menunjukkan efisiensi dan dinamika pemanfaatan fisik buku yang sangat aktif.'
+            'title'   => 'Perputaran Koleksi Sangat Aktif',
+            'message' => 'Angka perputaran koleksi sebesar ' . $turnover . ' kali/eksemplar/tahun menunjukkan efisiensi dan dinamika pemanfaatan fisik buku yang sangat tinggi oleh pemustaka.'
         ];
     } elseif ($turnover >= 0.5) {
         $insights[] = [
             'type'    => 'info',
             'icon'    => 'ℹ️',
             'title'   => 'Perputaran Koleksi Berada pada Kategori Cukup (Moderat)',
-            'message' => 'Perputaran koleksi mencapai ' . $turnover . ' kali/eksemplar/tahun. Disarankan meningkatkan promosi judul-judul populer melalui display tematik dan kurasi buku rekomendasi dosen/guru.'
+            'message' => 'Perputaran koleksi mencapai ' . $turnover . ' kali/eksemplar/tahun. Pustakawan dapat meningkatkan promosi judul-judul populer melalui display tematik dan rekomendasi buku baru.'
         ];
     } else {
         $insights[] = [
             'type'    => 'warning',
             'icon'    => '⚠️',
-            'title'   => 'Perputaran Koleksi di Bawah Standar Optimal SNP Perpusnas',
-            'message' => 'Rasio perputaran sebesar ' . $turnover . ' kali/eksemplar/tahun (Standar SNP minimal > 0.5). Disarankan melakukan reposisi letak koleksi, program gerakan literasi membaca, atau pemutakhiran koleksi wajib kurikulum.'
+            'title'   => 'Perputaran Koleksi Masih Rendah',
+            'message' => 'Rasio perputaran sebesar ' . $turnover . ' kali/eksemplar/tahun. Disarankan melakukan reposisi letak koleksi, program literasi membaca, atau penyelarasan bahan pustaka dengan minat pemustaka.'
         ];
     }
 
-    // 2. Evaluasi Komponen Koleksi: Pemanfaatan vs Koleksi Tidur (Dead Stock)
+    // 2. Evaluasi B.2.1.3: Pemanfaatan vs Koleksi Tidur (Dormant Collection)
     if ($dormantPct > 50) {
         $insights[] = [
             'type'    => 'warning',
             'icon'    => '💤',
-            'title'   => 'Tingkat Koleksi Tidur (Dormant Collection) Perlu Penanganan',
-            'message' => 'Sebesar ' . $dormantPct . '% eksemplar belum pernah dipinjam dalam setahun. Berdasarkan SNP Perpusnas RI Komponen 1, perpustakaan direkomendasikan mengadakan kegiatan Bedah Buku, penataan ulang rak (*shelf re-arrangement*), dan evaluasi penyiangan (*weeding*) terhadap bahan pustaka usang/rusak.'
+            'title'   => 'Tingkat Koleksi Belum Pernah Dipinjam Cukup Tinggi',
+            'message' => 'Sebesar ' . $dormantPct . '% eksemplar belum pernah dipinjam dalam periode tahun ini. Perpustakaan direkomendasikan mengadakan kegiatan bedah buku, penataan ulang rak (*shelf re-arrangement*), dan evaluasi penyiangan (*weeding*) terhadap buku yang usang.'
         ];
     } else {
         $insights[] = [
             'type'    => 'success',
             'icon'    => '📚',
-            'title'   => 'Tingkat Keterpakaian Koleksi Sangat Baik',
-            'message' => 'Sebesar ' . $utilizationPct . '% eksemplar aktif berputar. Pengadaan bahan pustaka dinilai sangat relevan dengan kebutuhan kurikulum dan minat pemustaka.'
+            'title'   => 'Pemanfaatan Koleksi Efektif',
+            'message' => 'Sebesar ' . $utilizationPct . '% eksemplar aktif dipinjam. Pengadaan bahan pustaka dinilai telah selaras dengan profil kebutuhan pemustaka.'
         ];
     }
 
-    // 3. Evaluasi Komponen Pelayanan: Kunjungan & Pembudayaan Literasi (SNP Perpusnas)
-    if ($visitsPerCap >= 12) {
+    // 3. Evaluasi B.2.2.1: Kunjungan Perpustakaan Per Kapita
+    if ($visitsPerCap >= 10) {
         $insights[] = [
             'type'    => 'success',
             'icon'    => '🚪',
-            'title'   => 'Daya Tarik Ruang & Kunjungan Pemustaka Sangat Tinggi',
-            'message' => 'Rata-rata kunjungan mencapai ' . $visitsPerCap . ' kali/anggota/tahun (rata-rata >= 1 kali/bulan). Perpustakaan berhasil memposisikan diri sebagai ruang ketiga (*third place*) dan pusat kegiatan literasi civitas akademika.'
+            'title'   => 'Daya Tarik Ruang & Kunjungan Pemustaka Tinggi',
+            'message' => 'Rata-rata kunjungan mencapai ' . $visitsPerCap . ' kali/anggota/tahun. Perpustakaan berhasil menjadi ruang yang nyaman dan fungsional bagi civitas pemustaka.'
         ];
     } else {
         $insights[] = [
             'type'    => 'info',
             'icon'    => '💡',
             'title'   => 'Peluang Peningkatan Kunjungan Pemustaka',
-            'message' => 'Rasio kunjungan sebesar ' . $visitsPerCap . ' kali/anggota/tahun. Sesuai indikator Akreditasi Komponen Pelayanan Perpusnas RI, perpustakaan dapat mengoptimalkan ruang diskusi kolaboratif, fasilitas Wi-Fi cepat, workshop literasi, dan kegiatan bedah karya ilmiah.'
+            'message' => 'Rasio kunjungan sebesar ' . $visitsPerCap . ' kali/anggota/tahun. Pengelola dapat mengoptimalkan kenyamanan ruang baca, fasilitas Wi-Fi, workshop berkala, dan penataan area diskusi kolaboratif.'
         ];
     }
 

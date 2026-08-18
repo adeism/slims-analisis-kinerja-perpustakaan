@@ -486,7 +486,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'export_csv') {
         </div>
         <div class="sub_section">
             <div class="text-muted small">
-                <?= __('Standar Nasional Perpustakaan (SNP Perpusnas RI 2024), SNI ISO 2789:2013 &amp; ISO 11620:2014 untuk Evaluasi dan Borang Akreditasi Perpustakaan.') ?>
+                <?= __('Pedoman Analisis Kinerja Perpustakaan Indonesia (PAKPI) &amp; Standar Internasional SNI ISO 2789:2013.') ?>
             </div>
         </div>
     </div>
