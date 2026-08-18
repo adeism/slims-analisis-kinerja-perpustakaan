@@ -2,7 +2,7 @@
 /**
  * Helper Functions - Plugin Analisis Kinerja Perpustakaan Indonesia (PAKPI)
  * 
- * Standar SNI ISO 2789:2013 & PAKPI Hendro Wicaksono
+ * Standar SNI ISO 2789:2013, ISO 11620:2014 & PAKPI Hendro Wicaksono
  */
 
 defined('INDEX_AUTH') OR die('Direct access not allowed');
@@ -155,7 +155,7 @@ function pakpiGetB213(mysqli $dbs, int $tahun): array {
     $resEks = $dbs->query($qEks);
     $totalEksemplar = (int)($resEks ? ($resEks->fetch_assoc()['total'] ?? 0) : 0);
 
-    // Total Eksemplar Tidak Dipinjam pada tahun berjalan (buku yang sudah ada sebelum tahun berikutnya)
+    // Total Eksemplar Tidak Dipinjam pada tahun berjalan
     $sql = "SELECT COUNT(1) AS total FROM item AS i 
             INNER JOIN biblio AS b ON i.biblio_id=b.biblio_id 
             WHERE i.item_code NOT IN (
@@ -214,4 +214,138 @@ function pakpiGetB221(mysqli $dbs, int $tahun, bool $onlyActive = false): array 
         'total_populasi'  => $totalPopulasi,
         'nilai'           => $nilai,
     ];
+}
+
+// ── Multi-Year Trend Analysis (3–5 Tahun Terakhir) ─────────────────────────
+function pakpiGetMultiYearTrend(mysqli $dbs, int $endYear, int $numYears = 3): array {
+    $trend = [];
+    $startYear = $endYear - ($numYears - 1);
+
+    for ($y = $startYear; $y <= $endYear; $y++) {
+        $b211 = pakpiGetB211($dbs, $y, false);
+        $b212 = pakpiGetB212($dbs, $y, false, false);
+        $b213 = pakpiGetB213($dbs, $y);
+        $b221 = pakpiGetB221($dbs, $y, false);
+
+        $trend[$y] = [
+            'tahun'            => $y,
+            'perputaran_eks'   => $b211[0]['nilai_thd_eksemplar'] ?? 0,
+            'perputaran_judul' => $b211[0]['nilai_thd_judul'] ?? 0,
+            'pinjaman_kapita'  => $b212[0]['nilai'] ?? 0,
+            'total_pinjaman'   => $b212[0]['total_pinjaman'] ?? 0,
+            'pct_koleksi_tdk'  => $b213['persentase_tidak'] ?? 0,
+            'pct_pemanfaatan'  => $b213['pct_digunakan'] ?? 0,
+            'kunjungan_kapita' => $b221['nilai'] ?? 0,
+            'total_kunjungan'  => $b221['total_kunjungan'] ?? 0,
+            'populasi'         => $b221['total_populasi'] ?? 0,
+        ];
+    }
+
+    return $trend;
+}
+
+// ── Monthly Seasonal Breakdown (Januari - Desember) ────────────────────────
+function pakpiGetMonthlyTrend(mysqli $dbs, int $tahun): array {
+    $monthNames = [
+        '01' => 'Januari', '02' => 'Februari', '03' => 'Maret',
+        '04' => 'April', '05' => 'Mei', '06' => 'Juni',
+        '07' => 'Juli', '08' => 'Agustus', '09' => 'September',
+        '10' => 'Oktober', '11' => 'November', '12' => 'Desember'
+    ];
+
+    $data = [];
+    foreach ($monthNames as $mKey => $mName) {
+        $pattern = $tahun . '-' . $mKey . '-%';
+
+        // Peminjaman
+        $stmtL = $dbs->prepare("SELECT COUNT(1) AS total FROM loan WHERE loan_date LIKE ?");
+        $stmtL->bind_param('s', $pattern);
+        $stmtL->execute();
+        $totLoan = (int)($stmtL->get_result()->fetch_assoc()['total'] ?? 0);
+
+        // Kunjungan
+        $stmtV = $dbs->prepare("SELECT COUNT(1) AS total FROM visitor_count WHERE checkin_date LIKE ?");
+        $stmtV->bind_param('s', $pattern);
+        $stmtV->execute();
+        $totVis = (int)($stmtV->get_result()->fetch_assoc()['total'] ?? 0);
+
+        $data[] = [
+            'month_code' => $mKey,
+            'month_name' => $mName,
+            'loans'      => $totLoan,
+            'visits'     => $totVis,
+        ];
+    }
+    return $data;
+}
+
+// ── Actionable Insights Generator (Rekomendasi Mutu Otomatis) ───────────────
+function pakpiGenerateInsights(array $dataB211, array $dataB212, array $dataB213, array $dataB221): array {
+    $insights = [];
+
+    $turnover = $dataB211[0]['nilai_thd_eksemplar'] ?? 0;
+    $loansPerCap = $dataB212[0]['nilai'] ?? 0;
+    $dormantPct = $dataB213['persentase_tidak'] ?? 0;
+    $utilizationPct = $dataB213['pct_digunakan'] ?? 0;
+    $visitsPerCap = $dataB221['nilai'] ?? 0;
+
+    // 1. Evaluasi Perputaran Koleksi
+    if ($turnover >= 1.5) {
+        $insights[] = [
+            'type'    => 'success',
+            'icon'    => '🌟',
+            'title'   => 'Tingkat Perputaran Koleksi Sangat Baik',
+            'message' => 'Angka perputaran koleksi (' . $turnover . ' kali/eksemplar) menunjukkan efisiensi dan dinamika pemanfaatan buku yang sangat tinggi oleh pemustaka.'
+        ];
+    } elseif ($turnover >= 0.5) {
+        $insights[] = [
+            'type'    => 'info',
+            'icon'    => 'ℹ️',
+            'title'   => 'Tingkat Perputaran Koleksi Moderat',
+            'message' => 'Perputaran koleksi mencapai ' . $turnover . ' kali/eksemplar. Pustakawan dapat meningkatkan promosi judul-judul populer melalui media sosial atau display tematik.'
+        ];
+    } else {
+        $insights[] = [
+            'type'    => 'warning',
+            'icon'    => '⚠️',
+            'title'   => 'Tingkat Perputaran Koleksi Perlu Peningkatan',
+            'message' => 'Rasio perputaran sebesar ' . $turnover . ' kali/eksemplar. Disarankan melakukan reposisi letak koleksi, program literasi membaca, atau penyelarasan kurikulum/silabus.'
+        ];
+    }
+
+    // 2. Evaluasi Koleksi Tidak Digunakan
+    if ($dormantPct > 65) {
+        $insights[] = [
+            'type'    => 'warning',
+            'icon'    => '💤',
+            'title'   => 'Tingkat Koleksi Tidur (Dormant) Cukup Tinggi',
+            'message' => 'Sebesar ' . $dormantPct . '% koleksi belum pernah dipinjam. Direkomendasikan melakukan kegiatan Bedah Buku, Resensi Koleksi Baru, penataan ulang rak (*shelf re-arrangement*), serta program penyiangan (*weeding*) terhadap buku yang usang.'
+        ];
+    } else {
+        $insights[] = [
+            'type'    => 'success',
+            'icon'    => '📚',
+            'title'   => 'Pemanfaatan Koleksi Efektif',
+            'message' => 'Sebesar ' . $utilizationPct . '% eksemplar aktif berputar. Pengadaan buku dinilai telah sesuai dengan profil kebutuhan pemustaka.'
+        ];
+    }
+
+    // 3. Evaluasi Kunjungan Per Kapita
+    if ($visitsPerCap >= 10) {
+        $insights[] = [
+            'type'    => 'success',
+            'icon'    => '🚪',
+            'title'   => 'Daya Tarik Ruang Perpustakaan Unggul',
+            'message' => 'Rata-rata kunjungan ' . $visitsPerCap . ' kali/anggota/tahun menunjukkan perpustakaan telah menjadi ruang ketiga (*third place*) yang nyaman dan fungsional bagi civitas akademika/pemustaka.'
+        ];
+    } else {
+        $insights[] = [
+            'type'    => 'info',
+            'icon'    => '💡',
+            'title'   => 'Peluang Peningkatan Kunjungan Fisik',
+            'message' => 'Rasio kunjungan sebesar ' . $visitsPerCap . ' kali/anggota. Perpustakaan dapat mengoptimalkan ruang diskusi kolaboratif, fasilitas Wi-Fi, workshop berkala, dan acara interaktif.'
+        ];
+    }
+
+    return $insights;
 }
