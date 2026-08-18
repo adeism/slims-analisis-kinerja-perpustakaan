@@ -251,6 +251,97 @@ $insights = pakpiGenerateInsights($dataB211, $dataB212, $dataB213, $dataB221);
     color: #2563eb;
     border-bottom-color: #2563eb;
 }
+
+/* Rich Visual Cards & Charts */
+.chart-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 18px;
+}
+@media (max-width: 992px) {
+    .chart-wrapper {
+        grid-template-columns: 1fr;
+    }
+}
+.chart-box {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.chart-box h4 {
+    color: #1e293b;
+    margin: 0 0 15px 0;
+    font-size: 15px;
+    font-weight: 700;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f1f5f9;
+}
+.comparison-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 12px;
+}
+.comparison-item {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px 12px;
+    text-align: center;
+}
+.comparison-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+}
+.comparison-value {
+    font-size: 28px;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.1;
+}
+.bar-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 5px 0;
+}
+.bar-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.bar-label {
+    min-width: 95px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+}
+.bar-container {
+    flex: 1;
+    background: #f1f5f9;
+    border-radius: 6px;
+    height: 28px;
+    position: relative;
+    overflow: hidden;
+}
+.bar-fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.8s ease-out;
+}
+.bar-value {
+    min-width: 85px;
+    text-align: right;
+    font-weight: 700;
+    font-size: 13px;
+    color: #334155;
+}
 .signer-row {
     background: #f8fafc;
     border: 1px solid #e2e8f0;
@@ -416,7 +507,7 @@ $insights = pakpiGenerateInsights($dataB211, $dataB212, $dataB213, $dataB221);
             </div>
         </div>
 
-        <!-- Indikator 1: B.2.1.1 Perputaran Koleksi -->
+        <!-- ── Indikator 1: B.2.1.1 Perputaran Koleksi ── -->
         <div class="pakpi-card">
             <div class="pakpi-card-header">
                 <h5 class="mb-0 font-weight-bold text-dark">
@@ -457,27 +548,49 @@ $insights = pakpiGenerateInsights($dataB211, $dataB212, $dataB213, $dataB221);
                 </div>
 
                 <?php if (!$table_only && !empty($dataB211)): 
+                    $maxTotal = max(array_column($dataB211, 'total')) ?: 1;
                     $eksemplar = $dataB211[0]['total_eksemplar'];
                     $judul     = $dataB211[0]['total_judul'];
                     $rasio     = $judul > 0 ? round($eksemplar / $judul, 2) : 0;
                 ?>
-                    <div class="row mt-3">
-                        <div class="col-md-4 mb-2">
-                            <div class="p-3 bg-light rounded text-center border">
-                                <div class="text-muted small font-weight-bold"><?= __('TOTAL EKSEMPLAR') ?></div>
-                                <div class="h3 font-weight-bold text-primary mb-0 mt-1"><?= number_format($eksemplar) ?></div>
+                    <div class="chart-wrapper">
+                        <!-- Bar Chart Perbandingan -->
+                        <div class="chart-box">
+                            <h4>📊 Perputaran Koleksi - Distribusi Transaksi</h4>
+                            <div class="bar-chart">
+                                <?php foreach ($dataB211 as $item): 
+                                    $pct = round(($item['total'] / $maxTotal) * 100);
+                                ?>
+                                    <div class="bar-item">
+                                        <div class="bar-label"><?= htmlspecialchars($item['indikator'], ENT_QUOTES, 'UTF-8') ?></div>
+                                        <div class="bar-container">
+                                            <div class="bar-fill bg-primary" style="width: <?= $pct ?>%;"></div>
+                                        </div>
+                                        <div class="bar-value text-primary"><?= number_format($item['total']) ?></div>
+                                    </div>
+                                <?php endforeach; ?>
                             </div>
                         </div>
-                        <div class="col-md-4 mb-2">
-                            <div class="p-3 bg-light rounded text-center border">
-                                <div class="text-muted small font-weight-bold"><?= __('TOTAL JUDUL') ?></div>
-                                <div class="h3 font-weight-bold text-success mb-0 mt-1"><?= number_format($judul) ?></div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-2">
-                            <div class="p-3 bg-light rounded text-center border">
-                                <div class="text-muted small font-weight-bold"><?= __('RASIO EKSEMPLAR / JUDUL') ?></div>
-                                <div class="h3 font-weight-bold text-warning mb-0 mt-1"><?= $rasio ?> <span class="small text-muted font-weight-normal">eks/judul</span></div>
+
+                        <!-- Grid Statistik Koleksi & Rasio -->
+                        <div class="chart-box">
+                            <h4>📚 Statistik Eksemplar &amp; Judul</h4>
+                            <div class="comparison-grid">
+                                <div class="comparison-item" style="background: #eff6ff; border: 1px solid #bfdbfe;">
+                                    <div class="comparison-label">Total Eksemplar</div>
+                                    <div class="comparison-value text-primary"><?= number_format($eksemplar) ?></div>
+                                    <div class="small text-muted mt-1">Fisik koleksi</div>
+                                </div>
+                                <div class="comparison-item" style="background: #f0fdf4; border: 1px solid #bbf7d0;">
+                                    <div class="comparison-label">Total Judul</div>
+                                    <div class="comparison-value text-success"><?= number_format($judul) ?></div>
+                                    <div class="small text-muted mt-1">Koleksi unik</div>
+                                </div>
+                                <div class="comparison-item" style="background: #fffbeb; border: 1px solid #fde68a;">
+                                    <div class="comparison-label">Rasio Eks/Judul</div>
+                                    <div class="comparison-value text-warning"><?= $rasio ?></div>
+                                    <div class="small text-muted mt-1">Rata-rata eksemplar</div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -485,7 +598,7 @@ $insights = pakpiGenerateInsights($dataB211, $dataB212, $dataB213, $dataB221);
             </div>
         </div>
 
-        <!-- Indikator 2: B.2.1.2 Pinjaman Per Kapita -->
+        <!-- ── Indikator 2: B.2.1.2 Pinjaman Per Kapita ── -->
         <div class="pakpi-card">
             <div class="pakpi-card-header">
                 <h5 class="mb-0 font-weight-bold text-dark">
@@ -522,10 +635,68 @@ $insights = pakpiGenerateInsights($dataB211, $dataB212, $dataB213, $dataB221);
                         </tbody>
                     </table>
                 </div>
+
+                <?php if (!$table_only && !empty($dataB212)): 
+                    $totPinj = $dataB212[0]['total_pinjaman'];
+                    $totPop  = $dataB212[0]['total_populasi'];
+                    $maxVal  = max($totPinj, $totPop) ?: 1;
+                    $pinjPct = round(($totPinj / $maxVal) * 100);
+                    $popPct  = round(($totPop / $maxVal) * 100);
+                ?>
+                    <div class="chart-wrapper">
+                        <!-- Perbandingan Pinjaman vs Populasi -->
+                        <div class="chart-box">
+                            <h4>👥 Pinjaman vs Populasi Anggota</h4>
+                            <div class="comparison-grid mb-3">
+                                <div class="comparison-item">
+                                    <div class="comparison-label">Total Pinjaman</div>
+                                    <div class="comparison-value text-primary"><?= number_format($totPinj) ?></div>
+                                </div>
+                                <div class="comparison-item">
+                                    <div class="comparison-label">Total Populasi</div>
+                                    <div class="comparison-value text-secondary"><?= number_format($totPop) ?></div>
+                                </div>
+                            </div>
+                            <div class="bar-chart">
+                                <div class="bar-item">
+                                    <div class="bar-label">Pinjaman</div>
+                                    <div class="bar-container">
+                                        <div class="bar-fill bg-primary" style="width: <?= $pinjPct ?>%;"></div>
+                                    </div>
+                                    <div class="bar-value text-primary"><?= number_format($totPinj) ?></div>
+                                </div>
+                                <div class="bar-item">
+                                    <div class="bar-label">Populasi</div>
+                                    <div class="bar-container">
+                                        <div class="bar-fill bg-secondary" style="width: <?= $popPct ?>%;"></div>
+                                    </div>
+                                    <div class="bar-value text-secondary"><?= number_format($totPop) ?></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Big Metric Card Per Kapita -->
+                        <div class="chart-box d-flex flex-column justify-content-center text-center">
+                            <h4>📈 Nilai Pinjaman Per Kapita</h4>
+                            <div class="p-3 my-auto rounded" style="background: #eff6ff; border: 2px solid #bfdbfe;">
+                                <div class="text-uppercase small font-weight-bold text-muted mb-2">Rata-rata Pinjaman Tahunan</div>
+                                <div class="display-4 font-weight-bold text-primary mb-2" style="font-size: 54px; line-height: 1;">
+                                    <?= $dataB212[0]['nilai'] ?>
+                                </div>
+                                <div>
+                                    <span class="badge badge-primary bg-primary text-white px-3 py-2" style="font-size: 13px;">Buku / Anggota / Tahun</span>
+                                </div>
+                                <div class="small text-muted mt-3">
+                                    Setiap anggota rata-rata meminjam <strong><?= $dataB212[0]['nilai'] ?> buku</strong> selama tahun <?= $tahun ?>.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
 
-        <!-- Indikator 3: B.2.1.3 Persentase Koleksi Tidak Digunakan -->
+        <!-- ── Indikator 3: B.2.1.3 Persentase Koleksi Tidak Digunakan ── -->
         <div class="pakpi-card">
             <div class="pakpi-card-header">
                 <h5 class="mb-0 font-weight-bold text-dark">
@@ -564,10 +735,53 @@ $insights = pakpiGenerateInsights($dataB211, $dataB212, $dataB213, $dataB221);
                         </tbody>
                     </table>
                 </div>
+
+                <?php if (!$table_only): ?>
+                    <div class="chart-wrapper">
+                        <!-- Giant Utilization Metric Card -->
+                        <div class="chart-box text-center d-flex flex-column justify-content-center">
+                            <h4>📊 Tingkat Pemanfaatan Koleksi</h4>
+                            <div class="p-3 my-auto rounded" style="background: #f0fdf4; border: 2px solid #bbf7d0;">
+                                <div class="text-uppercase small font-weight-bold text-muted mb-2">Persentase Koleksi Aktif</div>
+                                <div class="display-4 font-weight-bold text-success mb-2" style="font-size: 56px; line-height: 1;">
+                                    <?= $dataB213['pct_digunakan'] ?>%
+                                </div>
+                                <div>
+                                    <span class="badge badge-success bg-success text-white px-3 py-2" style="font-size: 13px;">Koleksi Dimanfaatkan</span>
+                                </div>
+                                <div class="small text-muted mt-3">
+                                    <strong><?= number_format($dataB213['total_digunakan']) ?></strong> dari total <strong><?= number_format($dataB213['total_eksemplar']) ?></strong> eksemplar telah dipinjam.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Detailed Grid Breakdown -->
+                        <div class="chart-box">
+                            <h4>📈 Rincian Status Eksemplar</h4>
+                            <div class="comparison-grid">
+                                <div class="comparison-item" style="background: #f0fdf4; border: 1px solid #bbf7d0;">
+                                    <div class="comparison-label">Eksemplar Aktif</div>
+                                    <div class="comparison-value text-success"><?= number_format($dataB213['total_digunakan']) ?></div>
+                                    <div class="small text-muted mt-1"><?= $dataB213['pct_digunakan'] ?>% dari koleksi</div>
+                                </div>
+                                <div class="comparison-item" style="background: #fef2f2; border: 1px solid #fecaca;">
+                                    <div class="comparison-label">Koleksi Tidur</div>
+                                    <div class="comparison-value text-danger"><?= number_format($dataB213['total_tidak']) ?></div>
+                                    <div class="small text-muted mt-1"><?= $dataB213['persentase_tidak'] ?>% belum dipinjam</div>
+                                </div>
+                                <div class="comparison-item" style="background: #eff6ff; border: 1px solid #bfdbfe;">
+                                    <div class="comparison-label">Total Koleksi</div>
+                                    <div class="comparison-value text-primary"><?= number_format($dataB213['total_eksemplar']) ?></div>
+                                    <div class="small text-muted mt-1">Populasi buku</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
 
-        <!-- Indikator 4: B.2.2.1 Kunjungan Perpustakaan Per Kapita -->
+        <!-- ── Indikator 4: B.2.2.1 Kunjungan Perpustakaan Per Kapita ── -->
         <div class="pakpi-card">
             <div class="pakpi-card-header">
                 <h5 class="mb-0 font-weight-bold text-dark">
@@ -580,7 +794,7 @@ $insights = pakpiGenerateInsights($dataB211, $dataB212, $dataB213, $dataB221);
                     <strong>Definisi SNI ISO 2789:2013 (Klausul B.2.2.1):</strong> Jumlah total kehadiran/kunjungan ke perpustakaan dalam setahun dibagi dengan jumlah anggota. Menilai daya tarik ruang dan layanan perpustakaan.
                 </div>
 
-                <div class="table-responsive mb-0">
+                <div class="table-responsive mb-3">
                     <table class="table table-bordered table-striped mb-0">
                         <thead class="thead-light">
                             <tr>
@@ -602,6 +816,64 @@ $insights = pakpiGenerateInsights($dataB211, $dataB212, $dataB213, $dataB221);
                         </tbody>
                     </table>
                 </div>
+
+                <?php if (!$table_only): 
+                    $totKunj = $dataB221['total_kunjungan'];
+                    $totPopV = $dataB221['total_populasi'];
+                    $maxKunj = max($totKunj, $totPopV) ?: 1;
+                    $kunjPct = round(($totKunj / $maxKunj) * 100);
+                    $popVPct = round(($totPopV / $maxKunj) * 100);
+                ?>
+                    <div class="chart-wrapper">
+                        <!-- Perbandingan Kunjungan vs Populasi -->
+                        <div class="chart-box">
+                            <h4>🚪 Kunjungan vs Populasi Anggota</h4>
+                            <div class="comparison-grid mb-3">
+                                <div class="comparison-item">
+                                    <div class="comparison-label">Total Kunjungan</div>
+                                    <div class="comparison-value text-info"><?= number_format($totKunj) ?></div>
+                                </div>
+                                <div class="comparison-item">
+                                    <div class="comparison-label">Total Populasi</div>
+                                    <div class="comparison-value text-secondary"><?= number_format($totPopV) ?></div>
+                                </div>
+                            </div>
+                            <div class="bar-chart">
+                                <div class="bar-item">
+                                    <div class="bar-label">Kunjungan</div>
+                                    <div class="bar-container">
+                                        <div class="bar-fill bg-info" style="width: <?= $kunjPct ?>%;"></div>
+                                    </div>
+                                    <div class="bar-value text-info"><?= number_format($totKunj) ?></div>
+                                </div>
+                                <div class="bar-item">
+                                    <div class="bar-label">Populasi</div>
+                                    <div class="bar-container">
+                                        <div class="bar-fill bg-secondary" style="width: <?= $popVPct ?>%;"></div>
+                                    </div>
+                                    <div class="bar-value text-secondary"><?= number_format($totPopV) ?></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Giant Metric Card Kunjungan Per Kapita -->
+                        <div class="chart-box text-center d-flex flex-column justify-content-center">
+                            <h4>📊 Rasio Kunjungan Per Kapita</h4>
+                            <div class="p-3 my-auto rounded" style="background: #f5f3ff; border: 2px solid #ddd6fe;">
+                                <div class="text-uppercase small font-weight-bold text-muted mb-2">Frekuensi Kunjungan Fisik</div>
+                                <div class="display-4 font-weight-bold text-primary mb-2" style="font-size: 56px; line-height: 1; color: #7c3aed !important;">
+                                    <?= $dataB221['nilai'] ?>
+                                </div>
+                                <div>
+                                    <span class="badge badge-info bg-info text-white px-3 py-2" style="font-size: 13px;">Kali / Anggota / Tahun</span>
+                                </div>
+                                <div class="small text-muted mt-3">
+                                    Rata-rata setiap anggota hadir <strong><?= $dataB221['nilai'] ?> kali</strong> ke perpustakaan dalam setahun.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
 
