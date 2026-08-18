@@ -2,7 +2,12 @@
 /**
  * Helper Functions - Plugin Analisis Kinerja Perpustakaan Indonesia (PAKPI)
  * 
- * Standar SNI ISO 2789:2013, ISO 11620:2014 & PAKPI Hendro Wicaksono
+ * Mengacu pada Standar Nasional Perpustakaan (SNP) Perpusnas RI:
+ * - Peraturan Perpustakaan Nasional RI No. 5 Tahun 2024 (Perpustakaan Perguruan Tinggi)
+ * - Peraturan Perpustakaan Nasional RI No. 4 Tahun 2024 (Perpustakaan Sekolah/Madrasah)
+ * - Peraturan Perpustakaan Nasional RI No. 11 Tahun 2021 (Perpustakaan Khusus)
+ * - Standar Internasional SNI ISO 2789:2013 & ISO 11620:2014
+ * - Instrumen Akreditasi 9 Komponen Perpustakaan Nasional RI
  */
 
 defined('INDEX_AUTH') OR die('Direct access not allowed');
@@ -419,7 +424,7 @@ function pakpiGetMonthlyTrend(mysqli $dbs, int $tahun): array {
     return $data;
 }
 
-// ── Actionable Insights Generator (Rekomendasi Mutu Otomatis) ───────────────
+// ── Actionable Insights Generator Berbasis Standar SNP Perpusnas RI ────────
 function pakpiGenerateInsights(array $dataB211, array $dataB212, array $dataB213, array $dataB221): array {
     $insights = [];
 
@@ -429,61 +434,61 @@ function pakpiGenerateInsights(array $dataB211, array $dataB212, array $dataB213
     $utilizationPct = $dataB213['pct_digunakan'] ?? 0;
     $visitsPerCap = $dataB221['nilai'] ?? 0;
 
-    // 1. Evaluasi Perputaran Koleksi
-    if ($turnover >= 1.5) {
+    // 1. Evaluasi Komponen Koleksi: Perputaran Koleksi (SNP Perpusnas RI 2024)
+    if ($turnover >= 1.0) {
         $insights[] = [
             'type'    => 'success',
             'icon'    => '🌟',
-            'title'   => 'Tingkat Perputaran Koleksi Sangat Baik',
-            'message' => 'Angka perputaran koleksi (' . $turnover . ' kali/eksemplar) menunjukkan efisiensi dan dinamika pemanfaatan buku yang sangat tinggi oleh pemustaka.'
+            'title'   => 'Perputaran Koleksi Memenuhi Standar Nasional (SNP Perpusnas RI)',
+            'message' => 'Angka perputaran koleksi sebesar ' . $turnover . ' kali/eksemplar/tahun melampaui batas standar minimum SNP Perpusnas RI (> 0.5 - 1.0), menunjukkan efisiensi dan dinamika pemanfaatan fisik buku yang sangat aktif.'
         ];
     } elseif ($turnover >= 0.5) {
         $insights[] = [
             'type'    => 'info',
             'icon'    => 'ℹ️',
-            'title'   => 'Tingkat Perputaran Koleksi Moderat',
-            'message' => 'Perputaran koleksi mencapai ' . $turnover . ' kali/eksemplar. Pustakawan dapat meningkatkan promosi judul-judul populer melalui media sosial atau display tematik.'
+            'title'   => 'Perputaran Koleksi Berada pada Kategori Cukup (Moderat)',
+            'message' => 'Perputaran koleksi mencapai ' . $turnover . ' kali/eksemplar/tahun. Disarankan meningkatkan promosi judul-judul populer melalui display tematik dan kurasi buku rekomendasi dosen/guru.'
         ];
     } else {
         $insights[] = [
             'type'    => 'warning',
             'icon'    => '⚠️',
-            'title'   => 'Tingkat Perputaran Koleksi Perlu Peningkatan',
-            'message' => 'Rasio perputaran sebesar ' . $turnover . ' kali/eksemplar. Disarankan melakukan reposisi letak koleksi, program literasi membaca, atau penyelarasan kurikulum/silabus.'
+            'title'   => 'Perputaran Koleksi di Bawah Standar Optimal SNP Perpusnas',
+            'message' => 'Rasio perputaran sebesar ' . $turnover . ' kali/eksemplar/tahun (Standar SNP minimal > 0.5). Disarankan melakukan reposisi letak koleksi, program gerakan literasi membaca, atau pemutakhiran koleksi wajib kurikulum.'
         ];
     }
 
-    // 2. Evaluasi Koleksi Tidak Digunakan
-    if ($dormantPct > 65) {
+    // 2. Evaluasi Komponen Koleksi: Pemanfaatan vs Koleksi Tidur (Dead Stock)
+    if ($dormantPct > 50) {
         $insights[] = [
             'type'    => 'warning',
             'icon'    => '💤',
-            'title'   => 'Tingkat Koleksi Tidur (Dormant) Cukup Tinggi',
-            'message' => 'Sebesar ' . $dormantPct . '% koleksi belum pernah dipinjam. Direkomendasikan melakukan kegiatan Bedah Buku, Resensi Koleksi Baru, penataan ulang rak (*shelf re-arrangement*), serta program penyiangan (*weeding*) terhadap buku yang usang.'
+            'title'   => 'Tingkat Koleksi Tidur (Dormant Collection) Perlu Penanganan',
+            'message' => 'Sebesar ' . $dormantPct . '% eksemplar belum pernah dipinjam dalam setahun. Berdasarkan SNP Perpusnas RI Komponen 1, perpustakaan direkomendasikan mengadakan kegiatan Bedah Buku, penataan ulang rak (*shelf re-arrangement*), dan evaluasi penyiangan (*weeding*) terhadap bahan pustaka usang/rusak.'
         ];
     } else {
         $insights[] = [
             'type'    => 'success',
             'icon'    => '📚',
-            'title'   => 'Pemanfaatan Koleksi Efektif',
-            'message' => 'Sebesar ' . $utilizationPct . '% eksemplar aktif berputar. Pengadaan buku dinilai telah sesuai dengan profil kebutuhan pemustaka.'
+            'title'   => 'Tingkat Keterpakaian Koleksi Sangat Baik',
+            'message' => 'Sebesar ' . $utilizationPct . '% eksemplar aktif berputar. Pengadaan bahan pustaka dinilai sangat relevan dengan kebutuhan kurikulum dan minat pemustaka.'
         ];
     }
 
-    // 3. Evaluasi Kunjungan Per Kapita
-    if ($visitsPerCap >= 10) {
+    // 3. Evaluasi Komponen Pelayanan: Kunjungan & Pembudayaan Literasi (SNP Perpusnas)
+    if ($visitsPerCap >= 12) {
         $insights[] = [
             'type'    => 'success',
             'icon'    => '🚪',
-            'title'   => 'Daya Tarik Ruang Perpustakaan Unggul',
-            'message' => 'Rata-rata kunjungan ' . $visitsPerCap . ' kali/anggota/tahun menunjukkan perpustakaan telah menjadi ruang ketiga (*third place*) yang nyaman dan fungsional bagi civitas akademika/pemustaka.'
+            'title'   => 'Daya Tarik Ruang & Kunjungan Pemustaka Sangat Tinggi',
+            'message' => 'Rata-rata kunjungan mencapai ' . $visitsPerCap . ' kali/anggota/tahun (rata-rata >= 1 kali/bulan). Perpustakaan berhasil memposisikan diri sebagai ruang ketiga (*third place*) dan pusat kegiatan literasi civitas akademika.'
         ];
     } else {
         $insights[] = [
             'type'    => 'info',
             'icon'    => '💡',
-            'title'   => 'Peluang Peningkatan Kunjungan Fisik',
-            'message' => 'Rasio kunjungan sebesar ' . $visitsPerCap . ' kali/anggota. Perpustakaan dapat mengoptimalkan ruang diskusi kolaboratif, fasilitas Wi-Fi, workshop berkala, dan acara interaktif.'
+            'title'   => 'Peluang Peningkatan Kunjungan Pemustaka',
+            'message' => 'Rasio kunjungan sebesar ' . $visitsPerCap . ' kali/anggota/tahun. Sesuai indikator Akreditasi Komponen Pelayanan Perpusnas RI, perpustakaan dapat mengoptimalkan ruang diskusi kolaboratif, fasilitas Wi-Fi cepat, workshop literasi, dan kegiatan bedah karya ilmiah.'
         ];
     }
 
