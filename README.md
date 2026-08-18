@@ -52,7 +52,7 @@ Plugin ini menghitung 4 indikator kinerja utama sesuai klausul SNI ISO 2789:2013
    *Standar resmi Badan Standardisasi Nasional (BSN) untuk statistik perpustakaan di Indonesia.*
 3. 📊 **[ISO 11620:2014 — Library Performance Indicators](https://www.iso.org/standard/56757.html)**  
    *Standar internasional indikator kinerja perpustakaan.*
-4. 📜 **[Undang-Undang RI Nomor 43 Tahun 2007 tentang Perpustakaan](https://jdih.perpusnas.go.id/)**  
+4. 📜 **[Undang-Undang RI Nomor 43 Tahun 2007 tentang Perpustakaan](https://jdih.perpusnas.go.id/)** ([Arsip JDIHN BPK RI](https://peraturan.bpk.go.id/Details/39907/uu-no-43-tahun-2007))  
    *Landasan evaluasi mutu penyelenggaraan perpustakaan di Indonesia.*
 
 ---
