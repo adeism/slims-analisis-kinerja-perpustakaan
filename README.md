@@ -8,35 +8,35 @@ Plugin ini dirancang khusus untuk mempermudah Pustakawan dan Kepala Perpustakaan
 
 ## ⚖️ Dasar Hukum & Tautan Dokumen Referensi Resmi
 
-Pengembangan dan formulasi indikator dalam plugin ini mengacu secara ketat pada regulasi resmi terkini berikut (klik tautan untuk melihat dokumen resmi):
+Pengembangan dan formulasi indikator dalam plugin ini mengacu secara ketat pada regulasi resmi terkini dari **Perpustakaan Nasional Republik Indonesia (Perpusnas RI)** dan Badan Standardisasi Nasional (BSN):
 
-1. 📜 **[Undang-Undang Republik Indonesia Nomor 43 Tahun 2007 tentang Perpustakaan](https://peraturan.bpk.go.id/Details/39907/uu-no-43-tahun-2007)**
+1. 📜 **[Undang-Undang Republik Indonesia Nomor 43 Tahun 2007 tentang Perpustakaan](https://jdih.perpusnas.go.id/)**
    * *Pasal 7 ayat (1) huruf f:* Menjamin kelangsungan penyelenggaraan dan pengelolaan perpustakaan sesuai Standar Nasional Perpustakaan (SNP).
    * *Pasal 11:* Standar Nasional Perpustakaan mencakup standar koleksi, sarana prasarana, pelayanan, tenaga, penyelenggaraan, dan pengelolaan.
-   * 🔗 Akses resmi: [JDIH BPK RI](https://peraturan.bpk.go.id/Details/39907/uu-no-43-tahun-2007) | [JDIH Perpusnas RI](https://jdih.perpusnas.go.id/)
+   * 🔗 Unduh Dokumen: [JDIH Perpusnas RI](https://jdih.perpusnas.go.id/) | [Arsip JDIHN BPK RI](https://peraturan.bpk.go.id/Details/39907/uu-no-43-tahun-2007)
 
-2. 🏛️ **[Peraturan Perpustakaan Nasional RI Nomor 5 Tahun 2024 tentang Standar Nasional Perpustakaan Perguruan Tinggi](https://peraturan.bpk.go.id/Details/295328/peraturan-perpusnas-no-5-tahun-2024)**
+2. 🏛️ **[Peraturan Perpustakaan Nasional RI Nomor 5 Tahun 2024 tentang Standar Nasional Perpustakaan Perguruan Tinggi](https://jdih.perpusnas.go.id/)**
    * Standar acuan resmi terbaru bagi universitas, institut, sekolah tinggi, politeknik, dan akademi terkait kecukupan koleksi, rasio perputaran buku, dan volume layanan peminjaman/kunjungan tahunan.
-   * 🔗 Akses resmi: [JDIH BPK RI No. 5/2024](https://peraturan.bpk.go.id/Details/295328/peraturan-perpusnas-no-5-tahun-2024)
+   * 🔗 Unduh Dokumen: [JDIH Perpusnas RI](https://jdih.perpusnas.go.id/) | [Arsip JDIHN BPK RI No. 5/2024](https://peraturan.bpk.go.id/Details/295328/peraturan-perpusnas-no-5-tahun-2024)
 
-3. 🏫 **[Peraturan Perpustakaan Nasional RI Nomor 4 Tahun 2024 tentang Standar Nasional Perpustakaan Sekolah/Madrasah](https://peraturan.bpk.go.id/Details/295327/peraturan-perpusnas-no-4-tahun-2024)**
+3. 🏫 **[Peraturan Perpustakaan Nasional RI Nomor 4 Tahun 2024 tentang Standar Nasional Perpustakaan Sekolah/Madrasah](https://jdih.perpusnas.go.id/)**
    * Standar baku mutu koleksi, rasio sirkulasi bahan pustaka per siswa/guru, dan keterpakaian koleksi perpustakaan SD/MI, SMP/MTs, dan SMA/SMK/MA.
-   * 🔗 Akses resmi: [JDIH BPK RI No. 4/2024](https://peraturan.bpk.go.id/Details/295327/peraturan-perpusnas-no-4-tahun-2024)
+   * 🔗 Unduh Dokumen: [JDIH Perpusnas RI](https://jdih.perpusnas.go.id/) | [Arsip JDIHN BPK RI No. 4/2024](https://peraturan.bpk.go.id/Details/295327/peraturan-perpusnas-no-4-tahun-2024)
 
-4. 🏢 **[Peraturan Perpustakaan Nasional RI Nomor 2 Tahun 2024 tentang Standar Nasional Perpustakaan Umum](https://peraturan.bpk.go.id/Details/295326/peraturan-perpusnas-no-2-tahun-2024)**
+4. 🏢 **[Peraturan Perpustakaan Nasional RI Nomor 2 Tahun 2024 tentang Standar Nasional Perpustakaan Umum](https://jdih.perpusnas.go.id/)**
    * Standar acuan bagi perpustakaan umum tingkat provinsi, kabupaten/kota, kecamatan, dan desa/kelurahan.
-   * 🔗 Akses resmi: [JDIH BPK RI No. 2/2024](https://peraturan.bpk.go.id/Details/295326/peraturan-perpusnas-no-2-tahun-2024)
+   * 🔗 Unduh Dokumen: [JDIH Perpusnas RI](https://jdih.perpusnas.go.id/) | [Arsip JDIHN BPK RI No. 2/2024](https://peraturan.bpk.go.id/Details/295326/peraturan-perpusnas-no-2-tahun-2024)
 
-5. 🔬 **[Peraturan Perpustakaan Nasional RI Nomor 11 Tahun 2021 tentang Standar Nasional Perpustakaan Khusus](https://peraturan.bpk.go.id/Details/210457/peraturan-perpusnas-no-11-tahun-2021)**
+5. 🔬 **[Peraturan Perpustakaan Nasional RI Nomor 11 Tahun 2021 tentang Standar Nasional Perpustakaan Khusus](https://jdih.perpusnas.go.id/)**
    * Standar penyelenggaraan perpustakaan pada kementerian, lembaga riset/pemerintah, BUMN, dan institusi swasta.
-   * 🔗 Akses resmi: [JDIH BPK RI No. 11/2021](https://peraturan.bpk.go.id/Details/210457/peraturan-perpusnas-no-11-tahun-2021)
+   * 🔗 Unduh Dokumen: [JDIH Perpusnas RI](https://jdih.perpusnas.go.id/) | [Arsip JDIHN BPK RI No. 11/2021](https://peraturan.bpk.go.id/Details/210457/peraturan-perpusnas-no-11-tahun-2021)
 
 6. 🎖️ **[Instrumen Akreditasi 9 Komponen Perpustakaan Nasional RI (SIMASKA)](https://akreditasi.perpusnas.go.id/)**
-   * Digunakan oleh Asesor Perpustakaan Nasional RI untuk akreditasi:
+   * Diterbitkan oleh Direktorat Standardisasi dan Akreditasi Perpustakaan Nasional RI untuk akreditasi institusi perpustakaan:
      * **Komponen 1 (Koleksi Perpustakaan):** Rasio perputaran koleksi (*turnover rate*), persentase koleksi aktif, dan penanganan koleksi tidur (*dead stock*).
      * **Komponen 3 (Pelayanan Perpustakaan):** Rata-rata pinjaman per kapita dan frekuensi kunjungan pemustaka ($\ge 12$ kali/anggota/tahun).
      * **Komponen 7 & 8 (Inovasi & Pembudayaan Literasi):** Pemanfaatan ruang baca dan indeks partisipasi pemustaka.
-   * 🔗 Portal Akreditasi: [SIMASKA Perpusnas RI](https://akreditasi.perpusnas.go.id/)
+   * 🔗 Portal Akreditasi Resmi: [SIMASKA Perpustakaan Nasional RI](https://akreditasi.perpusnas.go.id/)
 
 7. 🌐 **[SNI ISO 2789:2013 — Informasi dan Dokumentasi: Statistik Perpustakaan Internasional](https://pesta.bsn.go.id/produk/detail/9512-sniiso27892013)**
    * Standar resmi Badan Standardisasi Nasional (BSN) yang diadopsi dari ISO 2789 untuk standarisasi pengumpulan metrik perpustakaan.
